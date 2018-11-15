@@ -1,3 +1,4 @@
-exports.printMsg = function() {
-  console.log("This is a message from the demo package");
-}
+module.exports = function poopyDiScoop(string) {
+  if (typeof string !== "string") throw new TypeError("poopyDiScoop wants a string!");
+  return string.replace(/\s/g, "");
+};
