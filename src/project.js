@@ -2,7 +2,6 @@ export default class Project {
   constructor () {
     this.components = {}
     this.built = false
-    this.loadComponentsCache = {}
   }
 
   load (component) {
@@ -10,17 +9,10 @@ export default class Project {
   }
 
   get (componentName) {
-    console.log(componentName)
-    console.log(this.loadComponentsCache[componentName])
-    if (this.loadComponentsCache[componentName]) {
-      return this.loadComponentsCache[componentName];
-    }
-
     let component = this.components[componentName]
 
     if (component) {
-      this.loadComponentsCache[componentName] = component.loadComponents(this)
-      return this.loadComponentsCache[componentName]
+      return component.loadComponents(this)
     } else {
       return component
     }
@@ -29,8 +21,14 @@ export default class Project {
   build () {
     if (!this.built) {
       this.buildDependents()
-      for (let componentName in this.components) {
-        this.loadComponentsCache[componentName] = this.components[componentName].loadComponents(this)
+
+      let components = this.componentNames()
+
+      for (let i = 0; i < components.length; i++) {
+        let componentName = components[i];
+        if (this.isCircular(componentName)) {
+          throw new Error(`${componentName} is circular`);
+        }
       }
       this.built = true
     }
@@ -62,26 +60,36 @@ export default class Project {
       component.dependents = dependenciesMap[component.name] || []
     }
 
-    console.log('yessssssssss')
-
     return this
   }
 
   isCircular (componentName) {
-    if (!this.built) this.build()
-    console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@')
-    let component = this.get(componentName)
+    let component = this.components[componentName]
 
     if (component) {
-      component.dependencies.forEach((dependency) => {
-        let dependencyComponent = this.get(dependency)
+      for (let i = 0; i < component.dependencies.length; i++) {
+        let dependency = component.dependencies[i];
+
+        let dependencyComponent = this.components[dependency]
 
         if (dependencyComponent) {
           if (dependencyComponent.dependencies.includes(componentName)) {
             return true
           }
         }
-      })
+      }
+
+      for (let i = 0; i < component.dependents.length; i++) {
+        let dependency = component.dependents[i];
+
+        let dependencyComponent = this.components[dependency]
+
+        if (dependencyComponent) {
+          if (dependencyComponent.dependencies.includes(componentName)) {
+            return true
+          }
+        }
+      }
     }
 
     return false

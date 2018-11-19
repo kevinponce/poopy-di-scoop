@@ -1,6 +1,7 @@
 import Project from '../src/project';
 import Component from '../src/component';
 import assert from 'assert';
+import { expect } from 'chai';
 
 describe("Project", () => {
   var nav = new Component({ name: 'nav', html: '<ul class="header"><li>1</li><li>2</li></ul>' }).build();
@@ -9,7 +10,7 @@ describe("Project", () => {
   var circular1 = new Component({ name: 'circular', html: '<div><circular2 /></div>' }).build();
   var circular2 = new Component({ name: 'circular2', html: '<div><circular></circular></div>' }).build();
 
-  xit("load: nav", () => {
+  it("load: nav", () => {
     var project = new Project();
     project.load(nav);
     project.load(circular2);
@@ -23,7 +24,7 @@ describe("Project", () => {
     assert.equal(!!project.get(circular1.name), false);
   });
 
-  xit("load: nav, footer", () => {
+  it("load: nav, footer", () => {
     var project = new Project();
     project.load(nav);
     project.load(footer);
@@ -34,7 +35,7 @@ describe("Project", () => {
   });
 
   describe("buildDependents", () => {
-    xit("simple", () => {
+    it("simple", () => {
       var project = new Project();
       project.load(nav);
       project.load(circular1);
@@ -47,18 +48,16 @@ describe("Project", () => {
       assert.deepEqual(project.components[circular2.name].dependents, ["circular"]);
     });
 
-    xit("nested", () => {
+    it("nested", () => {
       var project = new Project();
       project.load(new Component({ name: 'a', html: '<b/>' }).build());
       project.load(new Component({ name: 'b', html: '<c/>' }).build());
       project.load(new Component({ name: 'c', html: '<a/>' }).build());
-
       project.buildDependents()
 
-      // nested....
-      assert.deepEqual(project.components['a'].dependents.includes, 'c');
-      //assert.deepEqual(project.components['b'].dependents, ["circular2"]);
-      //assert.deepEqual(project.components['c'].dependents, ["circular"]);
+      assert.deepEqual(project.components['a'].dependents.includes('c'), true);
+      assert.deepEqual(project.components['b'].dependents.includes('a'), true);
+      assert.deepEqual(project.components['c'].dependents.includes('b'), true);
     });
   });
 
@@ -66,14 +65,35 @@ describe("Project", () => {
     var project = new Project();
     project.load(new Component({ name: 'comp1', html: '<comp2/>' }).build());
     project.load(new Component({ name: 'comp2', html: '<comp1/>' }).build());
-    project.load(new Component({ name: 'comp3', html: '<a/>' }).build());
+    project.load(nav);
+    project.buildDependents();
 
-    project.build();
+    assert.equal(true, true);
 
-    //assert.equal(true, true);
+    assert.equal(project.isCircular('comp1'), true);
+    assert.equal(project.isCircular('comp2'), true);
+    assert.equal(project.isCircular(nav.name), false);
+  });
 
-    //assert.equal(project.isCircular('comp1'), true);
-    //assert.equal(project.isCircular('comp2'), true);
-    //assert.equal(project.isCircular('c'), true);
+  describe('#indexOf()', () => {
+    var project = new Project();
+    project.load(new Component({ name: 'comp1', html: '<comp2/>' }).build());
+    project.load(new Component({ name: 'comp2', html: '<comp3/>' }).build());
+    project.load(new Component({ name: 'comp3', html: '<comp4/>' }).build());
+    project.load(new Component({ name: 'comp4', html: '<comp1/>' }).build());
+    project.load(nav);
+    project.buildDependents();
+
+    it("isCircular", () => {
+      assert.equal(project.isCircular('comp1'), true);
+      assert.equal(project.isCircular('comp2'), true);
+      assert.equal(project.isCircular('comp3'), true);
+      assert.equal(project.isCircular('comp4'), true);
+      assert.equal(project.isCircular(nav.name), false);
+    });
+
+    it('should not throw an error', function() {
+      expect(() => project.build()).to.throw('comp1 is circular');
+    });
   });
 });
