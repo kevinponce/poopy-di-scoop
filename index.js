@@ -1,4 +1,6 @@
-module.exports = function poopyDiScoop(string) {
+function PoopyDiScoop(string) {
   if (typeof string !== "string") throw new TypeError("poopyDiScoop wants a string!");
-  return string.replace(/\s/g, "");
-};
+  return string + '!';
+}
+
+module.exports = PoopyDiScoop;
