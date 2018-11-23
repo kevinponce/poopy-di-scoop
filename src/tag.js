@@ -47,7 +47,7 @@ export default class Tag extends Base {
         index++
         this.endAt = index
       } else {
-        throw `invalid closing tag: ${this.name}${this.errorAround(index)}`
+        throw new Error(`invalid closing tag: ${this.name}${this.errorAround(index)}`);
       }
     } else {
       if (this.isSelfClosed(index)) {
@@ -141,7 +141,7 @@ export default class Tag extends Base {
 
           index = tag.endAt
         } else {
-          throw `Mismatched tag expect ${this.name} and got  ${tag.name}.${this.errorAround(index)}`
+          throw new Error(`Mismatched tag expect ${this.name} and got  ${tag.name}.${this.errorAround(index)}`);
         }
       } else {
         this.children.push(tag)
@@ -300,7 +300,7 @@ export default class Tag extends Base {
               html += this.toHtml({ params: newParams, htmlCheck })
             })
           } else {
-            throw `${value} is not array but is used in each.${this.errorAround(index)}`
+            throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
           }
         } else {
           try {
@@ -311,14 +311,14 @@ export default class Tag extends Base {
                 html += this.toHtml({ params: newParams, htmlCheck })
               })
             } else {
-              throw `${value} is not array but is used in each.${this.errorAround(index)}`
+              throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
             }
           } catch(err) {
-            throw `${value} is not array but is used in each.${this.errorAround(index)}`
+            throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
           }
         }
       } else {
-        throw `invalid each value "${each.value}".${this.errorAround(index)}`
+        throw new Error(`invalid each value "${each.value}".${this.errorAround(index)}`);
       }
     } else {
       /*

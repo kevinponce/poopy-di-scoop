@@ -42,7 +42,7 @@ export default class Attr extends Base {
     letter = this.html[index]
 
     if(!["'", "\""].includes(letter)) {
-      throw `invalid value for ${this.key}`
+      throw new Error(`invalid value for ${this.key}`);
       return index
     }
 

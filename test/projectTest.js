@@ -92,7 +92,7 @@ describe("Project", () => {
       assert.equal(project.isCircular(nav.name), false);
     });
 
-    it('should not throw an error', function() {
+    it('should not throw an error', () => {
       expect(() => project.build()).to.throw('comp1 is circular');
     });
   });

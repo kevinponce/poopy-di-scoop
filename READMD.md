@@ -59,12 +59,14 @@ to determin if needs to be updated on github pages or s3
 
 if statement
 
+option to load from dir or db
+
 
 
 folder structure:
 templates
 components
-components/nav/nav.html
+components/nav/index.html
 
 components/home/index.html
 components/home/home.scss
@@ -111,6 +113,29 @@ poopy-di-scoop-app
 
 poopy-di-scoop-api
 # where you can do search, forms, subscribe, signin, purchase items
+
+
+
+
+
+
+
+
+change all assertions to use chai instead of mocha
+
+
+
+figure out how to use who lib in an actual project....
+
+
+
+use sass to namespace scss files
+import sass from 'node-sass';
+
+example:
+var result = sass.renderSync({
+  data: '.test { .me { color: #ff0000; } }'
+});
 
 
 

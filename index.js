@@ -1,6 +1,3 @@
-function PoopyDiScoop(string) {
-  if (typeof string !== "string") throw new TypeError("poopyDiScoop wants a string!");
-  return string + '!';
-}
+import page from './src/page';
 
-module.exports = PoopyDiScoop;
+export default page;

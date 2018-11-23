@@ -1,6 +1,7 @@
 export default class Project {
   constructor () {
     this.components = {}
+    this.pages = {}
     this.built = false
   }
 
