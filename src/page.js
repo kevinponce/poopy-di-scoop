@@ -1,9 +1,9 @@
 export default class Page {
   constructor({ componentName, project, params }) {
-    this.componentName = componentName
-    this.project = project
-    this.params = params
-    this.component = project.get(this.componentName)
+    this.componentName = componentName;
+    this.project = project;
+    this.params = params;
+    this.component = project.get(this.componentName);
   }
 
   build () {
@@ -11,11 +11,11 @@ export default class Page {
       throw new Error(`Component ${this.componentName} not found`);
     }
 
-    this.project.build()
+    this.project.build();
     if (this.project.isCircular(this.componentName)) {
       throw new Error(`Component ${this.componentName} is circular`);
     }
 
-    return this.component.loadComponents(this.project).toHtml({ params: this.params })
+    return this.component.loadComponents(this.project).toHtml({ params: this.params });
   }
 }
