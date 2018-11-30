@@ -3,27 +3,21 @@ import { promisify } from 'util';
 import path from 'path';
 import Project from './src/project';
 import Component from './src/component';
+import Page from './src/page';
 const readFile = promisify(fs.readFile)
 const writeFile = promisify(fs.writeFile)
 const mkdir = promisify(fs.mkdir)
 
 export default class PoopyDiScoop {
   constructor(rootDir) {
-    rootDir = rootDir.trim();
-
-    if (!fs.statSync(rootDir).isDirectory()) {
-      throw new Error(`"${this.rootDir}" is an invalid directory`);
-    }
-
-    let slash = (rootDir.substr(-1) === '/' ? '' : '/');
-    this.rootDir = rootDir + slash;
-    this.project = new Project();
+    this.project = new Project(rootDir);
   }
 
   async load () {
-    await this.loadComponents(`${this.rootDir}components/`);
+    await this.loadComponents(`${this.project.rootDir}components/`);
     this.project.build()
-    await this.loadPages(`${this.rootDir}pages/`);
+    await this.loadPages(`${this.project.rootDir}pages/`);
+    this.buildPages();
   }
 
   componentFiles (dir, componentFiles = []) {
@@ -48,21 +42,21 @@ export default class PoopyDiScoop {
 
     try {
       await Promise.all(
-        files.map(name => {
+        files.map(file => {
           return new Promise((resolve, reject) => {
-            fs.readFile(name, 'utf8', (err, html) => {
+            fs.readFile(file, 'utf8', (err, html) => {
               if (err) {
                 reject(err);
               }
 
-              resolve({ name, html })
+              resolve({ path: file, html })
             });
           })
         })
       ).then(function(components) {
-        components.forEach(({ name, html }) => {
-          name = that.componentName(name);
-          that.project.load(new Component({ name, html }).build())
+        components.forEach(({ path, html }) => {
+          let name = that.componentName(path);
+          that.project.load(new Component({ name, html, path, rootDir: that.project.rootDir }).build())
         })
       }).catch(function(err) {
         throw err;
@@ -73,7 +67,7 @@ export default class PoopyDiScoop {
   }
 
   componentName (file) {
-    return file.replace(`${this.rootDir}components/`, '').replace('.html', '').split('/').join('-');
+    return file.replace(`${this.project.rootDir}components/`, '').replace('.html', '').split('/').join('-');
   }
 
   pageFiles (dir, pageFiles = []) {
@@ -121,12 +115,14 @@ export default class PoopyDiScoop {
               }
 
               // TODO catch invalid json
-              resolve({ name, page: JSON.parse(page) })
+              resolve({ name, pageJson: JSON.parse(page) })
             });
           })
         })
       ).then(function(pages) {
-        pages.forEach(({ name, page }) => {
+        pages.forEach(({ name, pageJson }) => {
+          let page = new Page(pageJson);
+
           if (!page.component) {
             throw new Error(`invalid page component required in ${name}`)
           }
@@ -138,33 +134,45 @@ export default class PoopyDiScoop {
           if (!component) {
             throw new Error(`Component ${page.component} not found...`)
           }
-          let html = component.toHtml({ params: page.params });
-          let path = that.pageName(page.url.trim());
-          let paths = path.substr(1, path.length - 1).split('/');
-          paths.pop();
-          let dir = `html/${paths.join('/')}`
 
-          if (!fs.existsSync(`${that.rootDir}${dir}`)) {
-            let dirArray = dir.split('/')
-            let currentDir = that.rootDir
-            for (let i = 0; i < dirArray.length; i++) {
-              currentDir += `${dirArray[i]}/`;
-
-              if (!fs.existsSync(currentDir)) {
-                fs.mkdirSync(currentDir)
-              }
-            }
-          }
-
-          writeFile(`${that.rootDir}html${path}.html`, html, (err, data) => {
-            if (err) throw err;
-          });
+          that.project.loadPage(page);
         })
       }).catch(function(err) {
         throw err;
       });
     } catch (err) {
       throw err;
+    }
+  }
+
+  buildPages () {
+    let pageNames  = Object.keys(this.project.pages)
+
+    for (let i = 0; i < pageNames.length; i++) {
+      let page = this.project.pages[pageNames[i]];
+      if (!page) {
+        throw new Error(`Page ${pageName} not found...`);
+      }
+
+      let html = this.project.toHtml(page.name);
+      let pageUrl = this.pageName(page.url.trim());
+      let dir = `html${path.parse(pageUrl).dir}`
+
+      if (!fs.existsSync(`${this.project.rootDir}${dir}`)) {
+        let dirArray = dir.split('/')
+        let currentDir = this.project.rootDir
+        for (let i = 0; i < dirArray.length; i++) {
+          currentDir += `${dirArray[i]}/`;
+
+          if (!fs.existsSync(currentDir)) {
+            fs.mkdirSync(currentDir)
+          }
+        }
+      }
+
+      writeFile(`${this.project.rootDir}html${pageUrl}.html`, html, (err, data) => {
+        if (err) throw err;
+      });
     }
   }
 }

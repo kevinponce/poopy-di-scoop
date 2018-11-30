@@ -1,21 +1,41 @@
+import url from 'url';
+
 export default class Page {
-  constructor({ componentName, project, params }) {
-    this.componentName = componentName;
-    this.project = project;
+  constructor({ name, url, title, component, params }) {
+    this.name = name;
+    this.url = url;
+    this.title = title;
+    this.component = component;
     this.params = params;
-    this.component = project.get(this.componentName);
+
+    this.isValid();
   }
 
-  build () {
+  isValid () {
     if (!this.component) {
-      throw new Error(`Component ${this.componentName} not found`);
+      throw new Error(`invalid page component required in ${this.name}`)
+    }
+    if (!this.url) {
+      throw new Error(`invalid page url required in ${this.name}`)
     }
 
-    this.project.build();
-    if (this.project.isCircular(this.componentName)) {
-      throw new Error(`Component ${this.componentName} is circular`);
+    if (!this.title) {
+      throw new Error(`invalid page title required in ${this.name}`)
     }
 
-    return this.component.loadComponents(this.project).toHtml({ params: this.params });
+    let uri = url.parse(this.url);
+    if (uri.hostname) {
+      throw new Error(`${this.name} url must be relative`)
+    }
+
+    return true;
+  }
+
+  toJson () {
+    return {
+      "name": this.name,
+      "title": this.title,
+      "url": this.url
+    }
   }
 }

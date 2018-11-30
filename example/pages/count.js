@@ -1,5 +1,7 @@
 {
-  "component": "count",
+  "name": "count",
   "url": "/count",
+  "title": "count",
+  "component": "count",
   "params": {}
 }

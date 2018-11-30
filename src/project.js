@@ -1,11 +1,26 @@
+import fs from 'fs';
+
 export default class Project {
-  constructor () {
+  constructor (rootDir = '.') {
     this.components = {}
+    this.pages = {}
     this.built = false
+
+    rootDir = rootDir.trim();
+    if (!fs.statSync(rootDir).isDirectory()) {
+      throw new Error(`"${this.rootDir}" is an invalid directory`);
+    }
+
+    let slash = (rootDir.substr(-1) === '/' ? '' : '/');
+    this.rootDir = rootDir + slash;
   }
 
   load (component) {
     this.components[component.name] = component
+  }
+
+  loadPage (page) {
+    this.pages[page.name] = page;
   }
 
   get (componentName) {
@@ -88,5 +103,40 @@ export default class Project {
     }
 
     return dependents;
+  }
+
+  pageParams () {
+    let pageNames  = Object.keys(this.pages);
+    let params  = {};
+
+    for (let i = 0; i < pageNames.length; i++) {
+      let page = this.pages[pageNames[i]];
+      if (!page) {
+        throw new Error(`Page ${pageName} not found...`);
+      }
+
+      params[page.name] = page.toJson()
+    }
+
+    return params
+  }
+
+  toHtml (pageName) {
+    let page = this.pages[pageName];
+    if (!page) {
+      throw new Error(`Page ${pageName} not found...`);
+    }
+
+    let component = this.get(page.component);
+    if (!component) {
+      throw new Error(`Component ${page.component} not found...`);
+    }
+    return component.toHtml({
+      params: { 
+        ...page.params,
+        pages: this.pageParams(),
+        page: page.toJson()
+      } 
+    });
   }
 }

@@ -3,10 +3,12 @@ import Base from './base'
 import Tag from './tag'
 
 export default class Parse extends Base {
-  constructor(html, { start, params, withWhiteSpace, prefix, postfix }) {
-    super(html,  { start, params, withWhiteSpace, prefix, postfix })
+  constructor(html, { start, params, withWhiteSpace, prefix, postfix, path, rootDir }) {
+    super(html, { start, params, withWhiteSpace, prefix, postfix });
 
-    this.tags = []
+    this.tags = [];
+    this.path = path;
+    this.rootDir = rootDir;
   }
 
   build() {
@@ -28,7 +30,14 @@ export default class Parse extends Base {
     if (this.html.indexOf('<', index) !== index) return
     let tagPrefix = (this.withWhiteSpace ? this.buildWhiteSpacePrefix(start, index) : '')
 
-    return new Tag(this.html, { start: index, params: this.params, withWhiteSpace: this.withWhiteSpace, prefix: tagPrefix }).build()
+    return new Tag(this.html, {
+      start: index,
+      params: this.params,
+      withWhiteSpace: this.withWhiteSpace,
+      prefix: tagPrefix,
+      path: this.path,
+      rootDir: this.rootDir
+    }).build()
   }
 
   dependencies () {

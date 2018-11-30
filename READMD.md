@@ -59,26 +59,6 @@ to determin if needs to be updated on github pages or s3
 
 if statement
 
-option to load from dir or db
-
-
-
-folder structure:
-templates
-components
-components/nav/index.html
-
-components/home/index.html
-components/home/home.scss
-components/home/home.js
-
-components/blogs/index.html
-components/blogs/blogs.scss
-components/blogs/blogs.js
-
-components/blog/index.html
-components/blog/blog.scss
-components/blog/blog.js
 
 
 data

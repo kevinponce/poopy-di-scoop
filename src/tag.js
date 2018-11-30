@@ -1,11 +1,14 @@
-import _ from 'lodash'
-import Base from './base'
-import Attr from './attr'
-import GetParams from './getParams'
-import StringAddParams from './stringAddParams'
+import path from 'path';
+import fs from 'fs';
+import _ from 'lodash';
+import url from 'url';
+import Base from './base';
+import Attr from './attr';
+import GetParams from './getParams';
+import StringAddParams from './stringAddParams';
 
 export default class Tag extends Base {
-  constructor(html, { start, params, withWhiteSpace, prefix, postfix, skipEach, tmpParams }) {
+  constructor(html, { start, params, withWhiteSpace, prefix, postfix, skipEach, tmpParams, path, rootDir }) {
     super(html, { start, params, withWhiteSpace, prefix, postfix })
 
     this.name = undefined
@@ -22,6 +25,8 @@ export default class Tag extends Base {
     this.tagNamePostfix = ''
     this.closingTagNamePostfix = ''
     this.closingTagPrefix = ''
+    this.path = path
+    this.rootDir = rootDir
   }
 
   build () {
@@ -132,7 +137,15 @@ export default class Tag extends Base {
         this.children.push(childPrefix)
       }
 
-      let tag = new Tag(this.html, { start: tagStartAt, params: this.params, withWhiteSpace: this.withWhiteSpace, prefix: '' }).build()
+      let tag = new Tag(this.html, {
+        start: tagStartAt,
+        params: this.params,
+        withWhiteSpace: this.withWhiteSpace,
+        prefix: '',
+        path: this.path,
+        rootDir: this.rootDir
+      }).build();
+
       if (tag.closing) {
         if (tag.name === this.name) {
           this.tagClosed = true
@@ -177,7 +190,7 @@ export default class Tag extends Base {
     let component = project.get(newThis.name)
 
     if (component) {
-      let { params, name, attrs, children, tmpParams, selfClosing, closed, tagClosed } = component.parse.tags[0]
+      let { params, name, attrs, children, tmpParams, selfClosing, closed, tagClosed, path, rootDir } = component.parse.tags[0]
 
       newThis.params = { ...newThis.params, ...params }
       newThis.name = name
@@ -188,6 +201,9 @@ export default class Tag extends Base {
       newThis.selfClosing = selfClosing
       newThis.closed = closed
       newThis.tagClosed = tagClosed
+
+      newThis.path = path
+      newThis.rootDir = rootDir
     }
 
     newThis.children = newThis.children.map((child) => {
@@ -327,6 +343,46 @@ export default class Tag extends Base {
         throw new Error(`invalid each value "${each.value}".`);
       }
     } else {
+      let skipRender = false;
+      if (!htmlCheck && this.name === 'link') {
+        let href = this.attrs.find((attr) => attr.key === 'href')
+
+        if (!href || !href.value) {
+          throw new Error(`invalid link`);
+        }
+
+        let uri = url.parse(href.value);
+        if (!uri.hostname) {
+          skipRender = true;
+
+          let hrefPath = href.value.trim();
+
+          console.log('!!!!!!!!!!!!!!!!!')
+          console.log(hrefPath)
+
+          if (hrefPath[0] === '/') {
+            if (hrefPath.indexOf(this.rootDir) !== 0) {
+              hrefPath = this.rootDir + hrefPath.substr(1, hrefPath.length - 1)
+            }
+          } else {
+            console.log('%$%$^$%^$%^$%^$%^')
+            console.log(this.path)
+            console.log(path.parse(this.path).dir, hrefPath)
+            hrefPath = path.resolve(path.parse(this.path).dir, hrefPath);
+          }
+
+          try {
+            if (fs.existsSync(hrefPath)) {
+              let cssBody = fs.readFileSync(hrefPath, 'utf8')
+              html = `<style>\n${cssBody}\n</style>\n`
+            } else {
+              throw new Error(`link file not found ${hrefPath}`);
+            }
+          } catch(err) {
+            throw err;
+          }
+        }
+      }
       /*
       let ifStatement = this.attrs.find((attr) => attr.key === 'if')
 
@@ -335,50 +391,58 @@ export default class Tag extends Base {
       }
       */
 
-      this.attrs.forEach((attr) => {
-        let attrHtml = `${attr.prefix}${attr.key}${attr.keyPostfix}`
+      if (!skipRender) {
+        let numberOfAttrs = this.attrs.length;
+        for (let i = 0; i < numberOfAttrs; i++) {
+          let attr = this.attrs[i];
+          let attrHtml = `${attr.prefix}${attr.key}${attr.keyPostfix}`;
 
-        if (htmlCheck || attr.key !== 'each') {
-          if (!htmlCheck && typeof attr.value === 'string') {
-            attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(attr.value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`
-          } else if (attr.value) {
-            attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${attr.value}${attr.valueQuote}`
+          if (htmlCheck || attr.key !== 'each') {
+            if (!htmlCheck && typeof attr.value === 'string') {
+              attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(attr.value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
+            } else if (attr.value) {
+              attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${attr.value}${attr.valueQuote}`;
+            }
+
+            if (!htmlCheck && i !== (numberOfAttrs - 1)) {
+              attrHtml += ' ';
+            }
+
+            attrs += `${attrHtml}${attr.postfix}`
           }
-
-          attrs += `${attrHtml}${attr.postfix}`
         }
-      })
 
-      let children = ''
-      this.children.forEach((child) => {
-        if (typeof child == 'string') {
-          if (htmlCheck) {
-            children += child
+        let children = ''
+        this.children.forEach((child) => {
+          if (typeof child == 'string') {
+            if (htmlCheck) {
+              children += child
+            } else {
+              let newChildren = this.nestChildren.map((child) => {
+                if (child.constructor.name === 'Tag') {
+                  let newTag = child.clone()
+                  newTag.params = { ...currentParams, ...this.tmpParams }
+
+                  return newTag
+                } else {
+                  return child
+                }
+              })
+
+              children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build()
+            }
           } else {
-            let newChildren = this.nestChildren.map((child) => {
-              if (child.constructor.name === 'Tag') {
-                let newTag = child.clone()
-                newTag.params = { ...currentParams, ...this.tmpParams }
-
-                return newTag
-              } else {
-                return child
-              }
-            })
-
-            children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build()
+            children += child.toHtml({ params, htmlCheck })
           }
-        } else {
-          children += child.toHtml({ params, htmlCheck })
+        })
+        if(!this.withWhiteSpace && attrs !== '') {
+          html += ' '
         }
-      })
-      if(!this.withWhiteSpace && attrs !== '') {
-        html += ' '
-      }
-      if (this.selfClosing) {
-        html += `${attrs}/>`
-      } else {
-        html += `${attrs}>${children}${this.closingTagPrefix}</${this.name}${this.closingTagNamePostfix}>`
+        if (this.selfClosing) {
+          html += `${attrs}/>`
+        } else {
+          html += `${attrs}>${children}${this.closingTagPrefix}</${this.name}${this.closingTagNamePostfix}>`
+        }
       }
     }
 
