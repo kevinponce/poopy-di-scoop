@@ -1,7 +1,6 @@
 export default class Project {
   constructor () {
     this.components = {}
-    this.pages = {}
     this.built = false
   }
 
@@ -22,8 +21,11 @@ export default class Project {
   build () {
     if (!this.built) {
       this.buildDependents()
-
       let components = this.componentNames()
+
+      for (let i = 0; i < components.length; i++) {
+        let componentName = components[i];
+      }
 
       for (let i = 0; i < components.length; i++) {
         let componentName = components[i];
@@ -65,34 +67,26 @@ export default class Project {
   }
 
   isCircular (componentName) {
+    return this.allDependent(componentName).includes(componentName);
+  }
+
+  allDependent(componentName, dependents=[]) {
     let component = this.components[componentName]
+    if (!component) {
+      return dependents;
+    }
 
-    if (component) {
-      for (let i = 0; i < component.dependencies.length; i++) {
-        let dependency = component.dependencies[i];
+    for (let i = 0; i < component.dependencies.length; i++) {
+      let dependencyComponentName = component.dependencies[i];
+      let dependencyComponent = this.components[dependencyComponentName];
 
-        let dependencyComponent = this.components[dependency]
-
-        if (dependencyComponent) {
-          if (dependencyComponent.dependencies.includes(componentName)) {
-            return true
-          }
-        }
-      }
-
-      for (let i = 0; i < component.dependents.length; i++) {
-        let dependency = component.dependents[i];
-
-        let dependencyComponent = this.components[dependency]
-
-        if (dependencyComponent) {
-          if (dependencyComponent.dependencies.includes(componentName)) {
-            return true
-          }
-        }
+      if (dependencyComponent && !dependents.includes(dependencyComponentName)) {
+        dependents.push(dependencyComponentName);
+        let nestDependents = this.allDependent(dependencyComponentName, dependents).filter(e => !dependents.includes(e));
+        dependents = [...dependents, ...nestDependents]
       }
     }
 
-    return false
+    return dependents;
   }
 }

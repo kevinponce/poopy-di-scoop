@@ -20,6 +20,7 @@ export default class PoopyDiScoop {
 
   async load () {
     await this.loadTemplates(`${this.rootDir}templates/`);
+    this.project.build()
     await this.loadPages(`${this.rootDir}pages/`);
   }
 
@@ -112,6 +113,9 @@ export default class PoopyDiScoop {
           if (!page.template) {
             throw new Error(`invalid page template required in ${name}`)
           }
+          if (!page.url) {
+            throw new Error(`invalid page url required in ${name}`)
+          }
           let component = that.project.get(page.template)
           if (!component) {
             throw new Erro(`Template ${page.template} not found...`)
@@ -119,6 +123,8 @@ export default class PoopyDiScoop {
           let html = component.toHtml({ params: page.params });
           console.log(page.params)
           console.log(html)
+
+          //that.pages.
         })
       }).catch(function(err) {
         throw err;

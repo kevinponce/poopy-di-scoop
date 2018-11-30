@@ -75,6 +75,57 @@ describe("Project", () => {
     assert.equal(project.isCircular(nav.name), false);
   });
 
+  describe('allDependent', () => {
+    it("Circular", () => {
+      var project = new Project();
+      project.load(new Component({ name: 'comp1', html: '<comp2/>' }).build());
+      project.load(new Component({ name: 'comp2', html: '<comp3/>' }).build());
+      project.load(new Component({ name: 'comp3', html: '<comp4/>' }).build());
+      project.load(new Component({ name: 'comp4', html: '<comp1/>' }).build());
+      project.buildDependents();
+
+      assert.equal(project.allDependent('comp1').length, 4);
+      assert.equal(project.allDependent('comp2').length, 4);
+      assert.equal(project.allDependent('comp3').length, 4);
+      assert.equal(project.allDependent('comp4').length, 4);
+      
+      assert.equal(project.allDependent('comp1').includes('comp1'), true);
+      assert.equal(project.allDependent('comp1').includes('comp2'), true);
+      assert.equal(project.allDependent('comp1').includes('comp3'), true);
+      assert.equal(project.allDependent('comp1').includes('comp4'), true);
+
+      assert.equal(project.allDependent('comp2').includes('comp1'), true);
+      assert.equal(project.allDependent('comp2').includes('comp2'), true);
+      assert.equal(project.allDependent('comp2').includes('comp3'), true);
+      assert.equal(project.allDependent('comp2').includes('comp4'), true);
+
+      assert.equal(project.allDependent('comp3').includes('comp1'), true);
+      assert.equal(project.allDependent('comp3').includes('comp2'), true);
+      assert.equal(project.allDependent('comp3').includes('comp3'), true);
+      assert.equal(project.allDependent('comp3').includes('comp4'), true);
+
+      assert.equal(project.allDependent('comp4').includes('comp1'), true);
+      assert.equal(project.allDependent('comp4').includes('comp2'), true);
+      assert.equal(project.allDependent('comp4').includes('comp3'), true);
+      assert.equal(project.allDependent('comp4').includes('comp4'), true);
+    });
+
+    it("Circular", () => {
+      var project = new Project();
+      project.load(new Component({ name: 'home', html: '<div><nav/><footer/></div>' }).build());
+      project.load(new Component({ name: 'nav', html: '<div>nav</div>' }).build());
+      project.load(new Component({ name: 'footer', html: '<div>footer</div>' }).build());
+      project.buildDependents();
+
+      assert.equal(project.allDependent('home').length, 2);
+      assert.equal(project.allDependent('nav').length, 0);
+      assert.equal(project.allDependent('footer').length, 0);
+      
+      assert.equal(project.allDependent('home').includes('nav'), true);
+      assert.equal(project.allDependent('home').includes('footer'), true);
+    });
+  });
+
   describe('#indexOf()', () => {
     var project = new Project();
     project.load(new Component({ name: 'comp1', html: '<comp2/>' }).build());
