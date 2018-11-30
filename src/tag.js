@@ -426,9 +426,8 @@ export default class Tag extends Base {
                 if (result.error) {
                   throw result.error;
                 }
-                console.log(result.error); // runtime error, or `undefined` if no error
-                console.log(result.code);
-                console.log('^&&&&&&&&&&&&&&&&&&&&&')
+
+                jsBody = result.code;
               }
 
               html = `<script type="text/javascript">\n${jsBody}\n</script>\n`

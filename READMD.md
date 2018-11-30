@@ -64,7 +64,7 @@ add option for css and js to only render once.
 add compressed to project so html files are smaller
 
 
-
+look into uglify-js for a js parser
 
 <yield name="javascripts"/>
 <yield name="style"/>
