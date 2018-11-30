@@ -7,25 +7,14 @@
 
 
 
-<nav>
-  <ul>
-    <li each="link in [page.Home, page.About, page.Videos]"><a href="{link.url}">{link.title}</a></li>
-  </ul>
-</nav>
-
-
-
-<var name="links" value="[page.Home, page.About, page.Videos]"/>
-<nav>
-  <ul>
-    <li each="link in links"><a href="{link.url}">{link.title}</a></li>
-  </ul>
-</nav>
+<var name="links" value="[1, 2, 3]"/>
 
 
 
 
-<style scoped></stye>
+
+<style scoped></style>
+<style namespaced></style>
 
 <link rel="stylesheet" href="styles.css" scoped head>
 
@@ -42,18 +31,6 @@
 
 
 
-
-change template to site or project
-
-
-might need to readd safe eval to add scope to parse html for [page.Home, page.About, page.Videos]
-
-
-loadTemplate
-
-
-TODO @ like vuejs
-
 add  checksum https://www.online-tech-tips.com/cool-websites/what-is-checksum/
 to determin if needs to be updated on github pages or s3
 
@@ -61,42 +38,14 @@ if statement
 
 
 
-data
-data/home
-  {
-    params: {
-      meta: {
-        title: 'Home',
-        description: 'Welcome'
-      },
-      header: 'Welcome to',
-      videos: [{
-        title: 'Hello',
-        date: '',
-        url: ''
-      }]
-    },
-    component: 'home',
-    url: '/',
-    name: 'Home',
-    title: 'home'
-  }
-
-
-
-
-projects
-poopy-di-scoop
-poopy-di-scoop-cli
-poopy-di-scoop-app
-
-
-poopy-di-scoop-api
 # where you can do search, forms, subscribe, signin, purchase items
 
 
 
 layout
+
+
+fix spaces when render....
 
 
 
@@ -109,13 +58,21 @@ figure out how to use who lib in an actual project....
 
 
 
-use sass to namespace scss files
-import sass from 'node-sass';
 
-example:
-var result = sass.renderSync({
-  data: '.test { .me { color: #ff0000; } }'
-});
+add option for css and js to only render once.
+add option to min/compressed js
+
+add compressed to project so html files are smaller
+
+
+
+
+<yield name="javascripts"/>
+<yield name="style"/>
+
+
+<link rel="stylesheet" href="./styles.css" scoped yield-to="style">
+<script type="text/javascript" src="filename.js" yield-to="javascripts"></script>
 
 
 

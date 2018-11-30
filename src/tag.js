@@ -2,6 +2,7 @@ import path from 'path';
 import fs from 'fs';
 import _ from 'lodash';
 import url from 'url';
+import sass from 'node-sass';
 import Base from './base';
 import Attr from './attr';
 import GetParams from './getParams';
@@ -346,7 +347,6 @@ export default class Tag extends Base {
       let skipRender = false;
       if (!htmlCheck && this.name === 'link') {
         let href = this.attrs.find((attr) => attr.key === 'href')
-
         if (!href || !href.value) {
           throw new Error(`invalid link`);
         }
@@ -356,27 +356,69 @@ export default class Tag extends Base {
           skipRender = true;
 
           let hrefPath = href.value.trim();
-
-          console.log('!!!!!!!!!!!!!!!!!')
-          console.log(hrefPath)
+          if (!['.css', '.scss'].includes(path.extname(hrefPath))) {
+            throw new Error(`${hrefPath} needs to end with .css or .scss`)
+          }
 
           if (hrefPath[0] === '/') {
             if (hrefPath.indexOf(this.rootDir) !== 0) {
               hrefPath = this.rootDir + hrefPath.substr(1, hrefPath.length - 1)
             }
           } else {
-            console.log('%$%$^$%^$%^$%^$%^')
-            console.log(this.path)
-            console.log(path.parse(this.path).dir, hrefPath)
             hrefPath = path.resolve(path.parse(this.path).dir, hrefPath);
           }
 
           try {
             if (fs.existsSync(hrefPath)) {
               let cssBody = fs.readFileSync(hrefPath, 'utf8')
+              let outputStyle = 'nested';
+
+              let compressed = this.attrs.find((attr) => attr.key === 'compressed')
+              if (compressed) {
+                outputStyle = 'compressed';
+              }
+              
+              if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
+                cssBody = sass.renderSync({ data: cssBody, outputStyle }).css;
+              }
+
               html = `<style>\n${cssBody}\n</style>\n`
             } else {
               throw new Error(`link file not found ${hrefPath}`);
+            }
+          } catch(err) {
+            throw err;
+          }
+        }
+      } else if (!htmlCheck && this.name === 'script') {
+        let src = this.attrs.find((attr) => attr.key === 'src')
+        if (!src || !src.value) {
+          throw new Error(`invalid script`);
+        }
+
+        let uri = url.parse(src.value);
+        if (!uri.hostname) {
+          skipRender = true;
+
+          let srcPath = src.value.trim();
+          if (path.extname(srcPath) !== '.js') {
+            throw new Error(`${srcPath} needs to end with .js`)
+          }
+
+          if (srcPath[0] === '/') {
+            if (srcPath.indexOf(this.rootDir) !== 0) {
+              srcPath = this.rootDir + srcPath.substr(1, srcPath.length - 1)
+            }
+          } else {
+            srcPath = path.resolve(path.parse(this.path).dir, srcPath);
+          }
+
+          try {
+            if (fs.existsSync(srcPath)) {
+              let cssBody = fs.readFileSync(srcPath, 'utf8')
+              html = `<script type="text/javascript">\n${cssBody}\n</script>\n`
+            } else {
+              throw new Error(`script file not found ${srcPath}`);
             }
           } catch(err) {
             throw err;
