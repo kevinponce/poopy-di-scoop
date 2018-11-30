@@ -3,6 +3,7 @@ import fs from 'fs';
 import _ from 'lodash';
 import url from 'url';
 import sass from 'node-sass';
+import UglifyJS from 'uglify-js';
 import Base from './base';
 import Attr from './attr';
 import GetParams from './getParams';
@@ -382,7 +383,8 @@ export default class Tag extends Base {
                 cssBody = sass.renderSync({ data: cssBody, outputStyle }).css;
               }
 
-              html = `<style>\n${cssBody}\n</style>\n`
+              let newLine = (outputStyle === 'compressed' ? '' : '\n');
+              html = `<style>${newLine}${cssBody}${newLine}</style>${newLine}`;
             } else {
               throw new Error(`link file not found ${hrefPath}`);
             }
@@ -415,8 +417,21 @@ export default class Tag extends Base {
 
           try {
             if (fs.existsSync(srcPath)) {
-              let cssBody = fs.readFileSync(srcPath, 'utf8')
-              html = `<script type="text/javascript">\n${cssBody}\n</script>\n`
+              let jsBody = fs.readFileSync(srcPath, 'utf8')
+
+              let compressed = this.attrs.find((attr) => attr.key === 'compressed')
+              if (compressed) {
+                let result = UglifyJS.minify(jsBody);
+
+                if (result.error) {
+                  throw result.error;
+                }
+                console.log(result.error); // runtime error, or `undefined` if no error
+                console.log(result.code);
+                console.log('^&&&&&&&&&&&&&&&&&&&&&')
+              }
+
+              html = `<script type="text/javascript">\n${jsBody}\n</script>\n`
             } else {
               throw new Error(`script file not found ${srcPath}`);
             }

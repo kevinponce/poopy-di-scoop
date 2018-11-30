@@ -1,1 +1,5 @@
-console.log('hello js')
+console.log('hello js');
+var test = true;
+if (test) {
+  alert('hi');
+}

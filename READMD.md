@@ -60,7 +60,6 @@ figure out how to use who lib in an actual project....
 
 
 add option for css and js to only render once.
-add option to min/compressed js
 
 add compressed to project so html files are smaller
 
