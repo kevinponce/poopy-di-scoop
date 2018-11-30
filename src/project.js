@@ -4,6 +4,7 @@ export default class Project {
   constructor (rootDir = '.') {
     this.components = {}
     this.pages = {}
+    this.checksums = {}
     this.built = false
 
     rootDir = rootDir.trim();

@@ -380,7 +380,7 @@ export default class Tag extends Base {
               }
               
               if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
-                cssBody = sass.renderSync({ data: cssBody, outputStyle }).css;
+                cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
               }
 
               let newLine = (outputStyle === 'compressed' ? '' : '\n');

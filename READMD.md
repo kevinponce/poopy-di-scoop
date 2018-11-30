@@ -1,34 +1,10 @@
-<nav>
-  <ul>
-    <li><a href="{page.Home.url}">{page.Home.title}</a></li>
-    <li><a href="/about">about</a></li>
-  </ul>
-</nav>
-
-
-
 <var name="links" value="[1, 2, 3]"/>
-
-
-
-
 
 <style scoped></style>
 <style namespaced></style>
 
-<link rel="stylesheet" href="styles.css" scoped head>
-
-<link rel="stylesheet" href="styles.css" scoped head embed>
 
 <link rel="stylesheet" href="styles.css" scoped inline>
-
-<script type="text/javascript" eof>
-  console.log('hi');
-</script>
-
-<script type="text/javascript" src="filename.js" ></script>
-
-
 
 
 add  checksum https://www.online-tech-tips.com/cool-websites/what-is-checksum/

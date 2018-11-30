@@ -1,12 +1,12 @@
 import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
+import crypto from 'crypto';
 import Project from './src/project';
 import Component from './src/component';
 import Page from './src/page';
 const readFile = promisify(fs.readFile)
 const writeFile = promisify(fs.writeFile)
-const mkdir = promisify(fs.mkdir)
 
 export default class PoopyDiScoop {
   constructor(rootDir) {
@@ -16,6 +16,7 @@ export default class PoopyDiScoop {
   async load () {
     await this.loadComponents(`${this.project.rootDir}components/`);
     this.project.build()
+    await this.loadChecksums();
     await this.loadPages(`${this.project.rootDir}pages/`);
     this.buildPages();
   }
@@ -68,6 +69,21 @@ export default class PoopyDiScoop {
 
   componentName (file) {
     return file.replace(`${this.project.rootDir}components/`, '').replace('.html', '').split('/').join('-');
+  }
+
+  async loadChecksums () {
+    let that = this;
+    return new Promise((resolve, reject) => {
+      fs.readFile(`${this.project.rootDir}checksums.json`, 'utf8', (err, checksums) => {
+        if (err) {
+          reject(err);
+        }
+
+        that.project.checksums = JSON.parse(checksums);
+
+        resolve();
+      });
+    });
   }
 
   pageFiles (dir, pageFiles = []) {
@@ -146,6 +162,7 @@ export default class PoopyDiScoop {
   }
 
   buildPages () {
+    let that = this
     let pageNames  = Object.keys(this.project.pages)
 
     for (let i = 0; i < pageNames.length; i++) {
@@ -170,9 +187,22 @@ export default class PoopyDiScoop {
         }
       }
 
-      writeFile(`${this.project.rootDir}html${pageUrl}.html`, html, (err, data) => {
-        if (err) throw err;
-      });
+      // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
+      var hash = crypto.createHash('sha1')
+      hash.write(html)
+      let checksum = hash.digest('hex');
+
+      if (this.project.checksums[page.name] !== checksum) {
+        fs.writeFile(`${this.project.rootDir}html${pageUrl}.html`, html, (err, data) => {
+          if (err) throw err;
+
+          that.project.checksums[page.name] = checksum
+
+          fs.writeFile(`${that.project.rootDir}checksums.json`, JSON.stringify(that.project.checksums, undefined, 2), (err, data) => {
+            if (err) throw err;
+          });
+        });
+      }
     }
   }
 }
