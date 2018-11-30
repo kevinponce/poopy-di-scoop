@@ -4,6 +4,8 @@ import path from 'path';
 import Project from './src/project';
 import Component from './src/component';
 const readFile = promisify(fs.readFile)
+const writeFile = promisify(fs.writeFile)
+const mkdir = promisify(fs.mkdir)
 
 export default class PoopyDiScoop {
   constructor(rootDir) {
@@ -90,6 +92,21 @@ export default class PoopyDiScoop {
     return pageFiles
   }
 
+  pageName (path) {
+    if (path === '/') {
+      path = '/index';
+    } else {
+      if (path[0] !== '/') {
+        path = `/${path}`;
+      }
+      if (path.substr(-1) === '/') {
+        path = path.substr(0, path.length -1);
+      }
+    }
+
+    return path;
+  }
+
   async loadPages (dir) {
     let that = this;
     let files = this.pageFiles(dir);
@@ -103,28 +120,45 @@ export default class PoopyDiScoop {
                 reject(err);
               }
 
-              resolve({ name, page })
+              // TODO catch invalid json
+              resolve({ name, page: JSON.parse(page) })
             });
           })
         })
       ).then(function(pages) {
         pages.forEach(({ name, page }) => {
-          page = JSON.parse(page); // TODO catch invalid json
           if (!page.template) {
             throw new Error(`invalid page template required in ${name}`)
           }
           if (!page.url) {
             throw new Error(`invalid page url required in ${name}`)
           }
+
           let component = that.project.get(page.template)
           if (!component) {
             throw new Erro(`Template ${page.template} not found...`)
           }
           let html = component.toHtml({ params: page.params });
-          console.log(page.params)
-          console.log(html)
+          let path = that.pageName(page.url.trim());
+          let paths = path.substr(1, path.length - 1).split('/');
+          paths.pop();
+          let dir = `html/${paths.join('/')}`
 
-          //that.pages.
+          if (!fs.existsSync(`${that.rootDir}${dir}`)) {
+            let dirArray = dir.split('/')
+            let currentDir = that.rootDir
+            for (let i = 0; i < dirArray.length; i++) {
+              currentDir += `${dirArray[i]}/`;
+
+              if (!fs.existsSync(currentDir)) {
+                fs.mkdirSync(currentDir)
+              }
+            }
+          }
+
+          writeFile(`${that.rootDir}html${path}.html`, html, (err, data) => {
+            if (err) throw err;
+          });
         })
       }).catch(function(err) {
         throw err;
