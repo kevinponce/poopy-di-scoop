@@ -21,30 +21,30 @@ export default class PoopyDiScoop {
   }
 
   async load () {
-    await this.loadTemplates(`${this.rootDir}templates/`);
+    await this.loadComponents(`${this.rootDir}components/`);
     this.project.build()
     await this.loadPages(`${this.rootDir}pages/`);
   }
 
-  templateFiles (dir, templateFiles = []) {
+  componentFiles (dir, componentFiles = []) {
     let that = this
     let files = fs.readdirSync(dir);
 
     files.forEach(function(file) {
       let dirCheck = `${dir}${file}`;
       if (fs.statSync(dirCheck).isDirectory()) {
-        templateFiles = [...templateFiles, ...that.templateFiles(`${dirCheck}/`)];
+        componentFiles = [...componentFiles, ...that.componentFiles(`${dirCheck}/`)];
       } else if (path.extname(file) === '.html') {
-        templateFiles.push(`${dir}${file}`);
+        componentFiles.push(`${dir}${file}`);
       }
     });
 
-    return templateFiles
+    return componentFiles
   }
 
-  async loadTemplates (dir) {
+  async loadComponents (dir) {
     let that = this;
-    let files = this.templateFiles(dir);
+    let files = this.componentFiles(dir);
 
     try {
       await Promise.all(
@@ -59,9 +59,9 @@ export default class PoopyDiScoop {
             });
           })
         })
-      ).then(function(templates) {
-        templates.forEach(({ name, html }) => {
-          name = that.templateName(name);
+      ).then(function(components) {
+        components.forEach(({ name, html }) => {
+          name = that.componentName(name);
           that.project.load(new Component({ name, html }).build())
         })
       }).catch(function(err) {
@@ -72,8 +72,8 @@ export default class PoopyDiScoop {
     }
   }
 
-  templateName (file) {
-    return file.replace(`${this.rootDir}templates/`, '').replace('.html', '').split('/').join('-');
+  componentName (file) {
+    return file.replace(`${this.rootDir}components/`, '').replace('.html', '').split('/').join('-');
   }
 
   pageFiles (dir, pageFiles = []) {
@@ -127,16 +127,16 @@ export default class PoopyDiScoop {
         })
       ).then(function(pages) {
         pages.forEach(({ name, page }) => {
-          if (!page.template) {
-            throw new Error(`invalid page template required in ${name}`)
+          if (!page.component) {
+            throw new Error(`invalid page component required in ${name}`)
           }
           if (!page.url) {
             throw new Error(`invalid page url required in ${name}`)
           }
 
-          let component = that.project.get(page.template)
+          let component = that.project.get(page.component)
           if (!component) {
-            throw new Erro(`Template ${page.template} not found...`)
+            throw new Error(`Component ${page.component} not found...`)
           }
           let html = component.toHtml({ params: page.params });
           let path = that.pageName(page.url.trim());

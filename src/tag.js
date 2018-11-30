@@ -300,25 +300,31 @@ export default class Tag extends Base {
               html += this.toHtml({ params: newParams, htmlCheck })
             })
           } else {
-            throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
+            throw new Error(`${value} is not array but is used in each.`);
           }
         } else {
           try {
-            if (array && Array.isArray(array)) {
-              array.forEach((item) => {
-                this.tmpParams[param] = item
-                let newParams = { ...params, ...currentParams, ...this.tmpParams }
-                html += this.toHtml({ params: newParams, htmlCheck })
-              })
-            } else {
-              throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
+            if (value) {
+              if (!Array.isArray(value)) {
+                value = JSON.parse(value)
+              }
+
+              if (Array.isArray(value)) {
+                value.forEach((item) => {
+                  this.tmpParams[param] = item
+                  let newParams = { ...params, ...currentParams, ...this.tmpParams }
+                  html += this.toHtml({ params: newParams, htmlCheck }) + '\n';
+                })
+              } else {
+                throw new Error(`${value} is not array but is used in each.2`);
+              }
             }
           } catch(err) {
-            throw new Error(`${value} is not array but is used in each.${this.errorAround(index)}`);
+            throw new Error(`${value} is not array but is used in each.1`);
           }
         }
       } else {
-        throw new Error(`invalid each value "${each.value}".${this.errorAround(index)}`);
+        throw new Error(`invalid each value "${each.value}".`);
       }
     } else {
       /*
