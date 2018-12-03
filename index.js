@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import Project from './src/project';
 import Component from './src/component';
 import Page from './src/page';
-import { PRETTY, COMPRESSED } from './src/const';
+import { PRETTY } from './src/const';
 const readFile = promisify(fs.readFile)
 const writeFile = promisify(fs.writeFile)
 

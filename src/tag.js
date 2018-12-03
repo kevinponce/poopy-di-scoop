@@ -5,6 +5,7 @@ import url from 'url';
 import sass from 'node-sass';
 import UglifyJS from 'uglify-js';
 import pretty from 'pretty';
+import { minify } from 'html-minifier';
 import Base from './base';
 import Attr from './attr';
 import GetParams from './getParams';
@@ -550,7 +551,14 @@ export default class Tag extends Base {
     if (fmt === PRETTY) {
       return pretty(html);
     } else {
-      return html;
+      return minify(html, {
+        collapseBooleanAttributes: true,
+        collapseInlineTagWhitespace: true,
+        collapseWhitespace: true,
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeTagWhitespace: true
+      });
     }
   }
 }
