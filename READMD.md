@@ -1,42 +1,37 @@
-<var name="links" value="[1, 2, 3]"/>
+# Poopy di scoop
+Is a component based static website builder
 
+# Examples
 
-<link rel="stylesheet" href="styles.css" scoped inline>
-
-
-if statement
-
-
-
-# where you can do search, forms, subscribe, signin, purchase items
-
-
-
-
-
-change all assertions to use chai instead of mocha
-
-
-
-figure out how to use who lib in an actual project....
-
-
-
-
-add option for css and js to only render once.
-
-
-look into uglify-js for a js parser
-
-
-layout
-
+# Roadmap
+## Layout
+```html
 <yield name="javascripts"/>
 <yield name="style"/>
 
 
 <link rel="stylesheet" href="./styles.css" scoped yield-to="style">
 <script type="text/javascript" src="filename.js" yield-to="javascripts"></script>
+````
 
+## Push to github or s3...
 
-push to github or s3...
+## if statement
+
+## inline css
+```html
+<link rel="stylesheet" href="styles.css" inline>
+```
+
+## render css/js once
+
+## var
+```html
+<var name="links" value="[1, 2, 3]"/>
+```
+
+## form submit
+## subscribe to blog
+## search
+## signin
+## store
