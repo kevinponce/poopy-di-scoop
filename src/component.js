@@ -31,8 +31,8 @@ export default class Component extends Base {
     return newThis;
   }
 
-  toHtml ({ params }) {
-    return this.parse.toHtml({ params });
+  toHtml ({ params, namespace }) {
+    return this.parse.toHtml({ params, namespace: `pds-${this.name}` });
   }
 
   paramsStructure () {

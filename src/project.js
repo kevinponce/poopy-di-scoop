@@ -1,13 +1,14 @@
 import fs from 'fs';
 
 export default class Project {
-  constructor (rootDir = '.') {
+  constructor (options = {}) {
     this.components = {}
     this.pages = {}
     this.checksums = {}
     this.built = false
 
-    rootDir = rootDir.trim();
+    let { rootDir } = options;
+    rootDir = rootDir ? rootDir.trim() : '.';
     if (!fs.statSync(rootDir).isDirectory()) {
       throw new Error(`"${this.rootDir}" is an invalid directory`);
     }

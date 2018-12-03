@@ -9,8 +9,9 @@ const readFile = promisify(fs.readFile)
 const writeFile = promisify(fs.writeFile)
 
 export default class PoopyDiScoop {
-  constructor(rootDir) {
-    this.project = new Project(rootDir);
+  constructor(options = {}) {
+    let { rootDir } = options;
+    this.project = new Project({ rootDir });
   }
 
   async load () {

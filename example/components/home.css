@@ -1,3 +1,12 @@
 .test {
   color: #fff;
 }
+#hello .me, .today{
+  font-size: 12px;
+}
+.home, .jail {
+  float: left;
+}
+div.home .hmmm {
+  clear: both;
+}

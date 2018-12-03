@@ -94,11 +94,24 @@ export default class Parse extends Base {
     return newThis
   }
 
-  toHtml({ params, htmlCheck }) {
+  toHtml({ params, htmlCheck, namespace}) {
     htmlCheck = htmlCheck || false
     let html = ''
+    let parentSelectors = [];
+
     this.tags.forEach((tag) => {
-      html += tag.toHtml({ params, htmlCheck })
+      let tagParentSelectors = tag.parentSelectors();
+
+      for (let i = 0; i < tagParentSelectors.length; i++) {
+        if (!parentSelectors.includes(tagParentSelectors[i])) {
+          parentSelectors.push(tagParentSelectors[i])
+        }
+      }
+    })
+
+    this.tags.forEach((tag) => {
+      tag.addNamesapce = true
+      html += tag.toHtml({ params, htmlCheck, parentSelectors, namespace })
     })
 
     return html

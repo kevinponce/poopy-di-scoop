@@ -8,6 +8,7 @@ import Base from './base';
 import Attr from './attr';
 import GetParams from './getParams';
 import StringAddParams from './stringAddParams';
+import { namespaceCss } from './css.js';
 
 export default class Tag extends Base {
   constructor(html, { start, params, withWhiteSpace, prefix, postfix, skipEach, tmpParams, path, rootDir }) {
@@ -29,6 +30,8 @@ export default class Tag extends Base {
     this.closingTagPrefix = ''
     this.path = path
     this.rootDir = rootDir
+    this.addNamesapce = false
+    this.parentName = ''
   }
 
   build () {
@@ -71,12 +74,12 @@ export default class Tag extends Base {
   }
 
   buildName (index) {
-    var pattern = new RegExp('^[a-zA-Z0-9_-]+$')
-    let { word, newIndex } = this.whilePattern(index, pattern)
+    var pattern = new RegExp('^[a-zA-Z0-9_-]+$');
+    let { word, newIndex } = this.whilePattern(index, pattern);
 
-    this.name = word
+    this.name = word;
 
-    return newIndex
+    return newIndex;
   }
 
   isSelfClosed(index) {
@@ -159,99 +162,120 @@ export default class Tag extends Base {
           throw new Error(`Mismatched tag expect ${this.name} and got  ${tag.name}.${this.errorAround(index)}`);
         }
       } else {
-        this.children.push(tag)
-        index = tag.endAt
+        this.children.push(tag);
+        index = tag.endAt;
       }
     }
 
-    return index
+    return index;
   }
 
   dependencies () {
-    let dependencies = []
+    let dependencies = [];
 
     this.children.forEach((child) => {
       if (typeof child !== 'string') {
         if (dependencies.indexOf(child.name) === -1) {
-          dependencies.push(child.name)
+          dependencies.push(child.name);
         }
 
         child.dependencies().forEach((dependency) => {
           if (dependencies.indexOf(dependency) === -1) {
             dependencies.push(dependency)
           }
-        })
+        });
       }
-    })
+    });
 
-    return dependencies
+    return dependencies;
+  }
+
+  parentSelectors () {
+    let parentSelectors = []
+    parentSelectors = [this.name];
+    let id = this.attrs.find((attr) => attr.key === 'id')
+    let klass = this.attrs.find((attr) => attr.key === 'class')
+
+    if (id) {
+      let ids = id.value.split(' ');
+      ids = ids.map((_id) => `#${_id}`)
+      parentSelectors = [...parentSelectors, ...ids];
+    }
+    if (klass) {
+      let klasses = klass.value.split(' ');
+      klasses = klasses.map((_class) => `.${_class}`)
+      parentSelectors = [...parentSelectors, ...klasses];
+    }
+
+    return parentSelectors;
   }
 
   loadComponents (project) {
-    let newThis = this.clone()
-    let component = project.get(newThis.name)
+    let newThis = this.clone();
+    let component = project.get(newThis.name);
 
     if (component) {
-      let { params, name, attrs, children, tmpParams, selfClosing, closed, tagClosed, path, rootDir } = component.parse.tags[0]
+      let { params, name, attrs, children, tmpParams, selfClosing, closed, tagClosed, path, rootDir } = component.parse.tags[0];
 
-      newThis.params = { ...newThis.params, ...params }
-      newThis.name = name
-      newThis.attrs = [...newThis.attrs, ...attrs]
-      newThis.nestChildren = newThis.children
-      newThis.children = children
-      newThis.tmpParams = { ...newThis.tmpParams, ...tmpParams }
-      newThis.selfClosing = selfClosing
-      newThis.closed = closed
-      newThis.tagClosed = tagClosed
+      newThis.params = { ...newThis.params, ...params };
+      newThis.parentName = newThis.name;
+      newThis.name = name;
+      newThis.attrs = [...newThis.attrs, ...attrs];
+      newThis.nestChildren = newThis.children;
+      newThis.children = children;
+      newThis.tmpParams = { ...newThis.tmpParams, ...tmpParams };
+      newThis.selfClosing = selfClosing;
+      newThis.closed = closed;
+      newThis.tagClosed = tagClosed;
 
-      newThis.path = path
-      newThis.rootDir = rootDir
+      newThis.path = path;
+      newThis.rootDir = rootDir;
     }
 
     newThis.children = newThis.children.map((child) => {
       if (typeof child !== 'string') {
-        return child.loadComponents(project)
+        return child.loadComponents(project);
       } else {
-        return child
+        return child;
       }
-    })
+    });
 
-    return newThis
+    return newThis;
   }
 
   buildParams () {
-    let params = {}
-    let each = this.attrs.find((attr) => attr.key === 'each')
-    let eachParam, eachValue
+    let params = {};
+    let each = this.attrs.find((attr) => attr.key === 'each');
+    let eachParam, eachValue;
 
-    if (each) {
-      let [param, value] = each.value.split(' in ')
+    if (each) {;
+      let [param, value] = each.value.split(' in ');
 
       if (typeof value === 'string' && typeof param === 'string') {
-        eachParam = param.trim()
-        eachValue = value.trim()
+        eachParam = param.trim();
+        eachValue = value.trim();
       }
     }
 
     this.attrs.forEach((attr) => {
-      let keyParams = {}
-      let valueParams = {}
-      if (attr.key) { keyParams = new GetParams(attr.key).build() }
-      if (attr.value) { valueParams = new GetParams(attr.value).build() }
-      let newParams = { ...keyParams, ...valueParams }
+      let keyParams = {};
+      let valueParams = {};
+      if (attr.key) { keyParams = new GetParams(attr.key).build() };
+      if (attr.value) { valueParams = new GetParams(attr.value).build() };
+      let newParams = { ...keyParams, ...valueParams };
 
       for (let key in newParams ) {
         if (eachParam && key === eachParam) {
           if (typeof newParams[key] === 'string') {
-            params[eachValue] = newParams[key]
+            params[eachValue] = newParams[key];
           } else {
-            params[eachValue] = _.merge({}, params[key] || {}, newParams[key])
+            params[eachValue] = _.merge({}, params[key] || {}, newParams[key]);
           }
         } else {
           if (typeof newParams[key] === 'string') {
-            params[key] = newParams[key]
+            params[key] = newParams[key];
           } else {
-            params[key] = _.merge({}, params[key] || {}, newParams[key])
+            params[key] = _.merge({}, params[key] || {}, newParams[key]);
           }
         }
       }
@@ -295,7 +319,7 @@ export default class Tag extends Base {
     return params;
   }
 
-  toHtml({ params, htmlCheck }) {
+  toHtml({ params, htmlCheck, parentSelectors, namespace }) {
     htmlCheck = htmlCheck || false
     let html = `${this.prefix}<${this.name}${this.tagNamePostfix}`
     let currentParams = { ...this.params, ...params };
@@ -311,11 +335,11 @@ export default class Tag extends Base {
 
         if (currentParams[value]) {
           if (Array.isArray(currentParams[value])) {
-            currentParams[value].forEach((item) => {
+            currentParams[value].forEach((item, index) => {
               this.tmpParams[param] = item
               let newParams = { ...params, ...currentParams, ...this.tmpParams }
               
-              html += this.toHtml({ params: newParams, htmlCheck })
+              html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index` })
             })
           } else {
             throw new Error(`${value} is not array but is used in each.`);
@@ -328,17 +352,17 @@ export default class Tag extends Base {
               }
 
               if (Array.isArray(value)) {
-                value.forEach((item) => {
-                  this.tmpParams[param] = item
-                  let newParams = { ...params, ...currentParams, ...this.tmpParams }
-                  html += this.toHtml({ params: newParams, htmlCheck }) + '\n';
+                value.forEach((item, index) => {
+                  this.tmpParams[param] = item;
+                  let newParams = { ...params, ...currentParams, ...this.tmpParams };
+                  html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index` }) + '\n';
                 })
               } else {
-                throw new Error(`${value} is not array but is used in each.2`);
+                throw new Error(`${value} is not array but is used in each.`);
               }
             }
           } catch(err) {
-            throw new Error(`${value} is not array but is used in each.1`);
+            throw new Error(`${value} is not array but is used in each.`);
           }
         }
       } else {
@@ -347,7 +371,7 @@ export default class Tag extends Base {
     } else {
       let skipRender = false;
       if (!htmlCheck && this.name === 'link') {
-        let href = this.attrs.find((attr) => attr.key === 'href')
+        let href = this.attrs.find((attr) => attr.key === 'href');
         if (!href || !href.value) {
           throw new Error(`invalid link`);
         }
@@ -358,12 +382,12 @@ export default class Tag extends Base {
 
           let hrefPath = href.value.trim();
           if (!['.css', '.scss'].includes(path.extname(hrefPath))) {
-            throw new Error(`${hrefPath} needs to end with .css or .scss`)
+            throw new Error(`${hrefPath} needs to end with .css or .scss`);
           }
 
           if (hrefPath[0] === '/') {
             if (hrefPath.indexOf(this.rootDir) !== 0) {
-              hrefPath = this.rootDir + hrefPath.substr(1, hrefPath.length - 1)
+              hrefPath = this.rootDir + hrefPath.substr(1, hrefPath.length - 1);
             }
           } else {
             hrefPath = path.resolve(path.parse(this.path).dir, hrefPath);
@@ -371,16 +395,19 @@ export default class Tag extends Base {
 
           try {
             if (fs.existsSync(hrefPath)) {
-              let cssBody = fs.readFileSync(hrefPath, 'utf8')
+              let cssBody = fs.readFileSync(hrefPath, 'utf8');
               let outputStyle = 'nested';
 
-              let compressed = this.attrs.find((attr) => attr.key === 'compressed')
-              if (compressed) {
+              if (this.attrs.find((attr) => attr.key === 'compressed')) {
                 outputStyle = 'compressed';
               }
               
               if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
                 cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
+              }
+
+              if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
+                cssBody = namespaceCss(cssBody, namespace, parentSelectors);
               }
 
               let newLine = (outputStyle === 'compressed' ? '' : '\n');
@@ -448,6 +475,7 @@ export default class Tag extends Base {
       */
 
       if (!skipRender) {
+        let addedAddNamespacedClass = false
         let numberOfAttrs = this.attrs.length;
         for (let i = 0; i < numberOfAttrs; i++) {
           let attr = this.attrs[i];
@@ -455,7 +483,12 @@ export default class Tag extends Base {
 
           if (htmlCheck || attr.key !== 'each') {
             if (!htmlCheck && typeof attr.value === 'string') {
-              attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(attr.value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
+              let value = attr.value
+              if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce) {
+                addedAddNamespacedClass = true;
+                value += ` ${namespace}`;
+              } else {}
+              attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
             } else if (attr.value) {
               attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${attr.value}${attr.valueQuote}`;
             }
@@ -464,44 +497,54 @@ export default class Tag extends Base {
               attrHtml += ' ';
             }
 
-            attrs += `${attrHtml}${attr.postfix}`
+            attrs += `${attrHtml}${attr.postfix}`;
           }
         }
+        if (!addedAddNamespacedClass && this.addNamesapce) {
+          attrs += ` class="${namespace}"`;
+        }
 
-        let children = ''
+        let children = '';
         this.children.forEach((child) => {
           if (typeof child == 'string') {
             if (htmlCheck) {
-              children += child
+              children += child;
             } else {
               let newChildren = this.nestChildren.map((child) => {
                 if (child.constructor.name === 'Tag') {
-                  let newTag = child.clone()
-                  newTag.params = { ...currentParams, ...this.tmpParams }
+                  let newTag = child.clone();
+                  newTag.params = { ...currentParams, ...this.tmpParams };
 
-                  return newTag
+                  return newTag;
                 } else {
-                  return child
+                  return child;
                 }
               })
 
-              children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build()
+              children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build();
             }
           } else {
-            children += child.toHtml({ params, htmlCheck })
+            if (child.parentName) {
+              child.addNamesapce = true
+              children += child.toHtml({ params, htmlCheck, parentSelectors: child.parentSelectors(), namespace: `${namespace}-${child.parentName}` });
+            } else {
+              children += child.toHtml({ params, htmlCheck, parentSelectors, namespace });
+            }
           }
-        })
+        });
+
         if(!this.withWhiteSpace && attrs !== '') {
-          html += ' '
+          html += ' ';
         }
+
         if (this.selfClosing) {
-          html += `${attrs}/>`
+          html += `${attrs}/>`;
         } else {
-          html += `${attrs}>${children}${this.closingTagPrefix}</${this.name}${this.closingTagNamePostfix}>`
+          html += `${attrs}>${children}${this.closingTagPrefix}</${this.name}${this.closingTagNamePostfix}>`;
         }
       }
     }
 
-    return html
+    return html;
   }
 }

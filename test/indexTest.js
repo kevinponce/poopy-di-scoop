@@ -3,7 +3,7 @@ import { expect } from 'chai';
 
 describe("PoopyDiScoop", () => {
   it("loads components", async () => {
-    let poopyDiScoop = new PoopyDiScoop('./example');
+    let poopyDiScoop = new PoopyDiScoop({ rootDir: './example' });
     await poopyDiScoop.load();
 
     expect(Object.keys(poopyDiScoop.project.components)).to.have.lengthOf(4);
