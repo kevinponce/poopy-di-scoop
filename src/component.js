@@ -1,5 +1,6 @@
-import Base from './base'
-import Parse from './parse'
+import Base from './base';
+import Parse from './parse';
+import { PRETTY } from './const';
 
 export default class Component extends Base {
   constructor({ name, html, path, rootDir }) {
@@ -31,8 +32,8 @@ export default class Component extends Base {
     return newThis;
   }
 
-  toHtml ({ params, namespace }) {
-    return this.parse.toHtml({ params, namespace: `pds-${this.name}` });
+  toHtml ({ params, namespace, fmt = PRETTY }) {
+    return this.parse.toHtml({ params, namespace: `pds-${this.name}`, fmt });
   }
 
   paramsStructure () {

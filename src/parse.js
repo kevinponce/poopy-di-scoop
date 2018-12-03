@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import Base from './base'
 import Tag from './tag'
+import { PRETTY } from './const';
 
 export default class Parse extends Base {
   constructor(html, { start, params, withWhiteSpace, prefix, postfix, path, rootDir }) {
@@ -94,7 +95,7 @@ export default class Parse extends Base {
     return newThis
   }
 
-  toHtml({ params, htmlCheck, namespace}) {
+  toHtml({ params, htmlCheck, namespace, fmt = PRETTY }) {
     htmlCheck = htmlCheck || false
     let html = ''
     let parentSelectors = [];
@@ -111,7 +112,7 @@ export default class Parse extends Base {
 
     this.tags.forEach((tag) => {
       tag.addNamesapce = true
-      html += tag.toHtml({ params, htmlCheck, parentSelectors, namespace })
+      html += tag.toHtml({ params, htmlCheck, parentSelectors, namespace, fmt })
     })
 
     return html

@@ -5,13 +5,14 @@ import crypto from 'crypto';
 import Project from './src/project';
 import Component from './src/component';
 import Page from './src/page';
+import { PRETTY, COMPRESSED } from './src/const';
 const readFile = promisify(fs.readFile)
 const writeFile = promisify(fs.writeFile)
 
 export default class PoopyDiScoop {
   constructor(options = {}) {
-    let { rootDir } = options;
-    this.project = new Project({ rootDir });
+    let { rootDir, fmt = PRETTY } = options;
+    this.project = new Project({ rootDir, fmt });
   }
 
   async load () {

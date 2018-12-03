@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { PRETTY } from './const';
 
 export default class Project {
   constructor (options = {}) {
@@ -7,7 +8,7 @@ export default class Project {
     this.checksums = {}
     this.built = false
 
-    let { rootDir } = options;
+    let { rootDir, fmt = PRETTY } = options;
     rootDir = rootDir ? rootDir.trim() : '.';
     if (!fs.statSync(rootDir).isDirectory()) {
       throw new Error(`"${this.rootDir}" is an invalid directory`);
@@ -15,6 +16,7 @@ export default class Project {
 
     let slash = (rootDir.substr(-1) === '/' ? '' : '/');
     this.rootDir = rootDir + slash;
+    this.fmt = fmt;
   }
 
   load (component) {
@@ -133,12 +135,14 @@ export default class Project {
     if (!component) {
       throw new Error(`Component ${page.component} not found...`);
     }
+
     return component.toHtml({
       params: { 
         ...page.params,
         pages: this.pageParams(),
         page: page.toJson()
-      } 
+      },
+      fmt: this.fmt
     });
   }
 }

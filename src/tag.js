@@ -4,11 +4,13 @@ import _ from 'lodash';
 import url from 'url';
 import sass from 'node-sass';
 import UglifyJS from 'uglify-js';
+import pretty from 'pretty';
 import Base from './base';
 import Attr from './attr';
 import GetParams from './getParams';
 import StringAddParams from './stringAddParams';
 import { namespaceCss } from './css.js';
+import { PRETTY } from './const';
 
 export default class Tag extends Base {
   constructor(html, { start, params, withWhiteSpace, prefix, postfix, skipEach, tmpParams, path, rootDir }) {
@@ -319,7 +321,7 @@ export default class Tag extends Base {
     return params;
   }
 
-  toHtml({ params, htmlCheck, parentSelectors, namespace }) {
+  toHtml({ params, htmlCheck, parentSelectors, namespace, fmt = PRETTY }) {
     htmlCheck = htmlCheck || false
     let html = `${this.prefix}<${this.name}${this.tagNamePostfix}`
     let currentParams = { ...this.params, ...params };
@@ -339,7 +341,7 @@ export default class Tag extends Base {
               this.tmpParams[param] = item
               let newParams = { ...params, ...currentParams, ...this.tmpParams }
               
-              html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index` })
+              html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index`, fmt })
             })
           } else {
             throw new Error(`${value} is not array but is used in each.`);
@@ -355,7 +357,7 @@ export default class Tag extends Base {
                 value.forEach((item, index) => {
                   this.tmpParams[param] = item;
                   let newParams = { ...params, ...currentParams, ...this.tmpParams };
-                  html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index` }) + '\n';
+                  html += this.toHtml({ params: newParams, htmlCheck, parentSelectors, namespace: `${namespace}-index`, fmt }) + '\n';
                 })
               } else {
                 throw new Error(`${value} is not array but is used in each.`);
@@ -526,9 +528,9 @@ export default class Tag extends Base {
           } else {
             if (child.parentName) {
               child.addNamesapce = true
-              children += child.toHtml({ params, htmlCheck, parentSelectors: child.parentSelectors(), namespace: `${namespace}-${child.parentName}` });
+              children += child.toHtml({ params, htmlCheck, parentSelectors: child.parentSelectors(), namespace: `${namespace}-${child.parentName}`, fmt });
             } else {
-              children += child.toHtml({ params, htmlCheck, parentSelectors, namespace });
+              children += child.toHtml({ params, htmlCheck, parentSelectors, namespace, fmt });
             }
           }
         });
@@ -545,6 +547,10 @@ export default class Tag extends Base {
       }
     }
 
-    return html;
+    if (fmt === PRETTY) {
+      return pretty(html);
+    } else {
+      return html;
+    }
   }
 }
