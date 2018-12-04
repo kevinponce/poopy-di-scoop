@@ -4,9 +4,10 @@
   "description": "",
   "main": "lib/index.js",
   "scripts": {
+    "prepublish": "babel src --presets babel-preset-es2015 --out-dir lib",
     "test": "mocha --require babel-register --require babel-polyfill",
     "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill",
-    "prepublish": "node_modules/babel-cli/bin/babel.js src --out-dir lib --require babel-register --require babel-polyfill"
+    "prepublished": "node_modules/babel-cli/bin/babel.js src --out-dir lib — presets es2015"
   },
   "author": "",
   "license": "MIT",
