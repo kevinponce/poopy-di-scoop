@@ -1,3 +1,4 @@
+require('babel-polyfill');
 import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
@@ -76,15 +77,20 @@ export default class PoopyDiScoop {
   async loadChecksums () {
     let that = this;
     return new Promise((resolve, reject) => {
-      fs.readFile(`${this.project.rootDir}checksums.json`, 'utf8', (err, checksums) => {
-        if (err) {
-          reject(err);
-        }
+      let file = `${this.project.rootDir}checksums.json`;
+      if (fs.existsSync(file)) { 
+        fs.readFile(file, 'utf8', (err, checksums) => {
+          if (err) {
+            reject(err);
+          }
 
-        that.project.checksums = JSON.parse(checksums);
+          that.project.checksums = JSON.parse(checksums);
 
+          resolve();
+        });
+      } else {
         resolve();
-      });
+      }
     });
   }
 

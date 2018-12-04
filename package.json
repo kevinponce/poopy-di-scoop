@@ -1,14 +1,13 @@
 {
   "name": "poopy-di-scoop",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel src --presets babel-preset-es2015 --presets stage-0 --out-dir lib",
+    "build": "babel src --out-dir lib",
     "prepublish": "npm run build",
     "test": "mocha --require babel-register --require babel-polyfill",
-    "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill",
-    "prepublished": "node_modules/babel-cli/bin/babel.js src --out-dir lib — presets es2015"
+    "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill"
   },
   "author": "",
   "license": "MIT",
@@ -17,7 +16,6 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.4",
-    "babel-plugin-transform-regenerator": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-0": "^6.24.1",
