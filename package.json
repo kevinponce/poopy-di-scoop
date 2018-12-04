@@ -2,10 +2,11 @@
   "name": "poopy-di-scoop",
   "version": "1.0.1",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "mocha --require babel-register --require babel-polyfill",
-    "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill"
+    "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill",
+    "prepublish": "node_modules/babel-cli/bin/babel.js src --out-dir lib"
   },
   "author": "",
   "license": "MIT",

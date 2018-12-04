@@ -2,12 +2,12 @@ import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
-import Project from './src/project';
-import Component from './src/component';
-import Page from './src/page';
-import { PRETTY } from './src/const';
-const readFile = promisify(fs.readFile)
-const writeFile = promisify(fs.writeFile)
+import Project from './project';
+import Component from './component';
+import Page from './page';
+import { PRETTY } from './const';
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
 
 export default class PoopyDiScoop {
   constructor(options = {}) {
@@ -17,14 +17,14 @@ export default class PoopyDiScoop {
 
   async load () {
     await this.loadComponents(`${this.project.rootDir}components/`);
-    this.project.build()
+    this.project.build();
     await this.loadChecksums();
     await this.loadPages(`${this.project.rootDir}pages/`);
     this.buildPages();
   }
 
   componentFiles (dir, componentFiles = []) {
-    let that = this
+    let that = this;
     let files = fs.readdirSync(dir);
 
     files.forEach(function(file) {
@@ -36,7 +36,7 @@ export default class PoopyDiScoop {
       }
     });
 
-    return componentFiles
+    return componentFiles;
   }
 
   async loadComponents (dir) {
@@ -52,14 +52,14 @@ export default class PoopyDiScoop {
                 reject(err);
               }
 
-              resolve({ path: file, html })
+              resolve({ path: file, html });
             });
           })
         })
       ).then(function(components) {
         components.forEach(({ path, html }) => {
           let name = that.componentName(path);
-          that.project.load(new Component({ name, html, path, rootDir: that.project.rootDir }).build())
+          that.project.load(new Component({ name, html, path, rootDir: that.project.rootDir }).build());
         })
       }).catch(function(err) {
         throw err;
