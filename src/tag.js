@@ -11,7 +11,7 @@ import Attr from './attr';
 import GetParams from './getParams';
 import StringAddParams from './stringAddParams';
 import { namespaceCss } from './css.js';
-import { PRETTY } from './const';
+import { PRETTY, COMPRESSED, TEST } from './const';
 
 export default class Tag extends Base {
   constructor(html, { start, params, withWhiteSpace, prefix, postfix, skipEach, tmpParams, path, rootDir }) {
@@ -487,7 +487,7 @@ export default class Tag extends Base {
           if (htmlCheck || attr.key !== 'each') {
             if (!htmlCheck && typeof attr.value === 'string') {
               let value = attr.value
-              if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce) {
+              if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
                 addedAddNamespacedClass = true;
                 value += ` ${namespace}`;
               } else {}
@@ -503,7 +503,7 @@ export default class Tag extends Base {
             attrs += `${attrHtml}${attr.postfix}`;
           }
         }
-        if (!addedAddNamespacedClass && this.addNamesapce) {
+        if (!addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
           attrs += ` class="${namespace}"`;
         }
 
@@ -550,7 +550,7 @@ export default class Tag extends Base {
 
     if (fmt === PRETTY) {
       return pretty(html);
-    } else {
+    } else if (fmt === COMPRESSED) {
       return minify(html, {
         collapseBooleanAttributes: true,
         collapseInlineTagWhitespace: true,
@@ -559,6 +559,8 @@ export default class Tag extends Base {
         removeRedundantAttributes: true,
         removeTagWhitespace: true
       });
+    } else {
+      return html;
     }
   }
 }

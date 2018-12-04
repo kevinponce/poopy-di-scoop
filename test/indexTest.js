@@ -1,4 +1,4 @@
-import PoopyDiScoop from '../index';
+import PoopyDiScoop from '../src/index';
 import { expect } from 'chai';
 
 describe("PoopyDiScoop", () => {

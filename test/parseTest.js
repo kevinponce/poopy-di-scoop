@@ -3,6 +3,8 @@ import Project from '../src/project';
 import Component from '../src/component';
 import assert from 'assert';
 
+const TEST = 'test';
+
 describe('Parse', () => {
   describe('build', () => {
     it("tag: a", () => {
@@ -217,19 +219,19 @@ describe('Parse', () => {
       it("simple", () => {
         let html = '<div class="hello-world">hello world</div>';
         var parse = new Parse(html, {}).build();
-        assert.equal(parse.toHtml({}), html);
+        assert.equal(parse.toHtml({ fmt: TEST }), html);
       });
 
       it("with children", () => {
         let html = '<div class="hello-world"><b>hello</b><div><p>world</p></div></div>';
         var parse = new Parse(html, {}).build();
-        assert.equal(parse.toHtml({}), html);
+        assert.equal(parse.toHtml({ fmt: TEST }), html);
       });
 
       it("with children and random spaces", () => {
         let html = '   <div class="hello-world"><b>hello </b><div>    <p>world</p></div>  </div>';
         var parse = new Parse(html, { withWhiteSpace: true}).build();
-        assert.equal(parse.toHtml({ htmlCheck: true }), html);
+        assert.equal(parse.toHtml({ htmlCheck: true, fmt: TEST }), html);
       });
     });
 
@@ -237,35 +239,50 @@ describe('Parse', () => {
       it("no found", () => {
         let html = '<div class="hello-world">{hello} world</div>';
         var parse = new Parse(html, {}).build();
-        assert.equal(parse.toHtml({ params: { hola: 'hola' } }), html);
+        assert.equal(parse.toHtml({ params: { hola: 'hola' }, fmt: TEST }), html);
       });
 
       it("hello", () => {
         var parse = new Parse('<div class="hello-world">{hello} world</div>', {}).build();
-        assert.equal(parse.toHtml({ params: { hello: 'hola' } }), '<div class="hello-world">hola world</div>');
+        assert.equal(parse.toHtml({
+          params: { hello: 'hola' },
+          fmt: TEST
+        }), '<div class="hello-world">hola world</div>');
       });
 
       it("with children", () => {
         var parse = new Parse('<div class="hello-world"><b>{hello}</b><div><p>{world}</p></div></div>', {}).build();
-        assert.equal(parse.toHtml({ params: { hello: 'hola', world: 'yes' } }), '<div class="hello-world"><b>hola</b><div><p>yes</p></div></div>');
+        assert.equal(parse.toHtml({
+          params: { hello: 'hola', world: 'yes' },
+          fmt: TEST
+        }), '<div class="hello-world"><b>hola</b><div><p>yes</p></div></div>');
       });
 
       it("user nested params in children", () => {
         var parse = new Parse('<div>Hi my name is {user.name}! <div>I am {user.age} and live in <b>{user.address.country}</b></div></div>', {}).build();
-        assert.equal(parse.toHtml({ params: {
-          'user': { 'name': 'kevin', 'age': '30', 'address': { 'country': 'usa' } }
-        }}), '<div>Hi my name is kevin! <div>I am 30 and live in <b>usa</b></div></div>');
+        assert.equal(parse.toHtml({
+          params: {
+            'user': { 'name': 'kevin', 'age': '30', 'address': { 'country': 'usa' }}
+          },
+          fmt: TEST
+        }), '<div>Hi my name is kevin! <div>I am 30 and live in <b>usa</b></div></div>');
       });
 
       it("nested numbers", () => {
         var parse = new Parse('<ul><li each="number in numbers">{number}</li></ul>', {}).build();
-        assert.equal(parse.toHtml({ params: { numbers: [1, 2, 3]} }), "<ul><li>1</li><li>2</li><li>3</li></ul>");
+        assert.equal(parse.toHtml({
+          params: { numbers: [1, 2, 3] },
+          fmt: TEST
+        }), "<ul><li>1</li><li>2</li><li>3</li></ul>");
       });
 
       it("links", () => {
         var parse = new Parse('<ul><li each="link in links"><a href="{link.href}">{link.title}</a></li></ul>', {}).build();
-        assert.equal(parse.toHtml({ params: {
-          links:[{ href: '#', title: 'home'}, { href: '/about', title: 'about' }] }
+        assert.equal(parse.toHtml({
+          params: {
+            links:[{ href: '#', title: 'home'}, { href: '/about', title: 'about' }]
+          },
+          fmt: TEST
         }), '<ul><li><a href="#">home</a></li><li><a href="/about">about</a></li></ul>');
       });
     });

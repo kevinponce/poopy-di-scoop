@@ -2,6 +2,8 @@ import Component from '../src/component';
 import Project from '../src/project';
 import assert from 'assert';
 
+const TEST = 'test';
+
 describe('Component', () => {
   describe('build', () => {
     it("tag: a", () => {
@@ -75,13 +77,13 @@ describe('Component', () => {
       it("simple", () => {
         let html = '<div class="hello-world">hello world</div>';
         var component = new Component({ name: 'noParams', html: html }).build();
-        assert.equal(component.toHtml({}), html);
+        assert.equal(component.toHtml({ fmt: TEST }), html);
       });
 
       it("with children", () => {
         let html = '<div class="hello-world"><b>hello</b><div><p>world</p></div></div>';
         var component = new Component({ name: 'withChildren', html: html }).build();
-        assert.equal(component.toHtml({}), html);
+        assert.equal(component.toHtml({ fmt: TEST }), html);
       });
     });
 
@@ -89,36 +91,48 @@ describe('Component', () => {
       it("no found", () => {
         let html = '<div class="hello-world">{hello} world</div>';
         var component = new Component({ name: 'withParams', html: html }).build();
-        assert.equal(component.toHtml({ params: { hola: 'hola' } }), html);
+        assert.equal(component.toHtml({ params: { hola: 'hola' }, fmt: TEST }), html);
       });
 
       it("hello", () => {
         var component = new Component({ name: 'hello', html: '<div class="hello-world">{hello} world</div>' }).build();
-        assert.equal(component.toHtml({ params: { hello: 'hola' } }), '<div class="hello-world">hola world</div>');
+        assert.equal(component.toHtml({ params: { hello: 'hola' }, fmt: TEST }), '<div class="hello-world">hola world</div>');
       });
 
       it("with children", () => {
         var component = new Component({ name: 'withChildren', html: '<div class="hello-world"><b>{hello}</b><div><p>{world}</p></div></div>' }).build();
-        assert.equal(component.toHtml({ params: { hello: 'hola', world: 'yes' } }), '<div class="hello-world"><b>hola</b><div><p>yes</p></div></div>');
+        assert.equal(component.toHtml({
+          params: { hello: 'hola', world: 'yes' },
+          fmt: TEST
+        }), '<div class="hello-world"><b>hola</b><div><p>yes</p></div></div>');
       });
 
       it("user nested params in children", () => {
         var component = new Component({ name: 'userNestedParamsInchildren', html: '<div>Hi my name is {user.name}! <div>I am {user.age} and live in <b>{user.address.country}</b></div></div>' }).build();
 
-        assert.equal(component.toHtml({ params: {
-          'user': { 'name': 'kevin', 'age': '30', 'address': { 'country': 'usa' } }
-        }}), '<div>Hi my name is kevin! <div>I am 30 and live in <b>usa</b></div></div>');
+        assert.equal(component.toHtml({
+          params: {
+            'user': { 'name': 'kevin', 'age': '30', 'address': { 'country': 'usa' } }
+          },
+          fmt: TEST
+        }), '<div>Hi my name is kevin! <div>I am 30 and live in <b>usa</b></div></div>');
       });
 
       it("nested numbers", () => {
         var component = new Component({ name: 'nestedNumbers', html: '<ul><li each="number in numbers">{number}</li></ul>' }).build();
-        assert.equal(component.toHtml({ params: { numbers: [1, 2, 3]} }), "<ul><li>1</li><li>2</li><li>3</li></ul>");
+        assert.equal(component.toHtml({
+          params: { numbers: [1, 2, 3] },
+          fmt: TEST
+        }), "<ul><li>1</li><li>2</li><li>3</li></ul>");
       });
 
       it("links", () => {
         var component = new Component({ name: 'links', html: '<ul><li each="link in links"><a href="{link.href}">{link.title}</a></li></ul>' }).build();
-        assert.equal(component.toHtml({ params: {
-          links:[{ href: '#', title: 'home'}, { href: '/about', title: 'about' }] }
+        assert.equal(component.toHtml({
+          params: {
+            links:[{ href: '#', title: 'home'}, { href: '/about', title: 'about' }]
+          },
+          fmt: TEST
         }), '<ul><li><a href="#">home</a></li><li><a href="/about">about</a></li></ul>');
       });
     });
