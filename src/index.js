@@ -1,5 +1,4 @@
 import fs from 'fs';
-import 'babel-polyfill';
 import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
