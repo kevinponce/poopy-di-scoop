@@ -396,30 +396,26 @@ export default class Tag extends Base {
             hrefPath = path.resolve(path.parse(this.path).dir, hrefPath);
           }
 
-          try {
-            if (fs.existsSync(hrefPath)) {
-              let cssBody = fs.readFileSync(hrefPath, 'utf8');
-              let outputStyle = 'nested';
+          if (fs.existsSync(hrefPath)) {
+            let cssBody = fs.readFileSync(hrefPath, 'utf8');
+            let outputStyle = 'nested';
 
-              if (this.attrs.find((attr) => attr.key === 'compressed')) {
-                outputStyle = 'compressed';
-              }
-              
-              if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
-                cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
-              }
-
-              if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
-                cssBody = namespaceCss(cssBody, namespace, parentSelectors);
-              }
-
-              let newLine = (outputStyle === 'compressed' ? '' : '\n');
-              html = `<style>${newLine}${cssBody}${newLine}</style>${newLine}`;
-            } else {
-              throw new Error(`link file not found ${hrefPath}`);
+            if (this.attrs.find((attr) => attr.key === 'compressed')) {
+              outputStyle = 'compressed';
             }
-          } catch(err) {
-            throw err;
+            
+            if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
+              cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
+            }
+
+            if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
+              cssBody = namespaceCss(cssBody, namespace, parentSelectors);
+            }
+
+            let newLine = (outputStyle === 'compressed' ? '' : '\n');
+            html = `<style>${newLine}${cssBody}${newLine}</style>${newLine}`;
+          } else {
+            skipRender = false;
           }
         }
       } else if (!htmlCheck && this.name === 'script') {
@@ -445,27 +441,23 @@ export default class Tag extends Base {
             srcPath = path.resolve(path.parse(this.path).dir, srcPath);
           }
 
-          try {
-            if (fs.existsSync(srcPath)) {
-              let jsBody = fs.readFileSync(srcPath, 'utf8')
+          if (fs.existsSync(srcPath)) {
+            let jsBody = fs.readFileSync(srcPath, 'utf8')
 
-              let compressed = this.attrs.find((attr) => attr.key === 'compressed')
-              if (compressed) {
-                let result = UglifyJS.minify(jsBody);
+            let compressed = this.attrs.find((attr) => attr.key === 'compressed')
+            if (compressed) {
+              let result = UglifyJS.minify(jsBody);
 
-                if (result.error) {
-                  throw result.error;
-                }
-
-                jsBody = result.code;
+              if (result.error) {
+                throw result.error;
               }
 
-              html = `<script type="text/javascript">\n${jsBody}\n</script>\n`
-            } else {
-              throw new Error(`script file not found ${srcPath}`);
+              jsBody = result.code;
             }
-          } catch(err) {
-            throw err;
+
+            html = `<script type="text/javascript">\n${jsBody}\n</script>\n`
+          } else {
+            skipRender = false;
           }
         }
       }

@@ -254,5 +254,21 @@ describe('Tag', () => {
         }), '<ul><li><a href="#">home</a></li><li><a href="/about">about</a></li></ul>');
       });
     });
+
+    describe('css', () => {
+      it("not found", () => {
+        let html = '<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" />';
+        var tag = new Tag(html, {}).build();
+        assert.equal(tag.toHtml({ }), html);
+      });
+    });
+
+    describe('js', () => {
+      it("not found", () => {
+        let html = '<script type="text/javascript" src="javascript.js"></script>';
+        var tag = new Tag(html, { path: '.' }).build();
+        assert.equal(tag.toHtml({ }), html);
+      });
+    });
   });
 });
