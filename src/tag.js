@@ -482,7 +482,7 @@ export default class Tag extends Base {
               if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
                 addedAddNamespacedClass = true;
                 value += ` ${namespace}`;
-              } else {}
+              }
               attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
             } else if (attr.value) {
               attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${attr.value}${attr.valueQuote}`;
@@ -509,6 +509,7 @@ export default class Tag extends Base {
                 if (child.constructor.name === 'Tag') {
                   let newTag = child.clone();
                   newTag.params = { ...currentParams, ...this.tmpParams };
+                  newTag.nestChildren = { ...newTag.nestChildren, ...this.nestChildren };
 
                   return newTag;
                 } else {
@@ -519,6 +520,7 @@ export default class Tag extends Base {
               children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build();
             }
           } else {
+            child.nestChildren = this.nestChildren
             if (child.parentName) {
               child.addNamesapce = true
               children += child.toHtml({ params, htmlCheck, parentSelectors: child.parentSelectors(), namespace: `${namespace}-${child.parentName}`, fmt });

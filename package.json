@@ -1,13 +1,13 @@
 {
   "name": "poopy-di-scoop",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
     "build": "babel src --out-dir lib",
     "prepublish": "npm run build",
     "test": "mocha --require babel-register --require babel-polyfill",
-    "testFile": "mocha test/indexTest.js --require babel-register --require babel-polyfill"
+    "testFile": "mocha test/componentTest.js --require babel-register --require babel-polyfill"
   },
   "author": "",
   "license": "MIT",

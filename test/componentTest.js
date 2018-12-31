@@ -138,6 +138,38 @@ describe('Component', () => {
     });
   });
 
+  describe("to html parent simple", () => {
+    var project = new Project()
+    project.load(new Component({ name: 'parent', html: '<div id="test">{children}</div>' }).build());
+    project.load(new Component({ name: 'test', html: '<parent><h3>hello</h3></parent>' }).build());
+    project.load(new Component({ name: 'test2', html: '<parent><h3>hello</h3><h2>world</h2></parent>' }).build());
+    project.build();
+
+    it("parent nav", () => {
+      var component = project.get('test');
+
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test">\n  <h3>hello</h3>\n</div>');
+    });
+    it("parent nav", () => {
+      var component = project.get('test2');
+
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test2">\n  <h3>hello</h3>\n  <h2>world</h2>\n</div>');
+    });
+  });
+
+  describe("to html parent nested", () => {
+    var project = new Project()
+    project.load(new Component({ name: 'parent', html: '<div id="test"><nav></nav><div>{children}</div></div>' }).build());
+    project.load(new Component({ name: 'test', html: '<parent><h3>hello</h3></parent>' }).build());
+    project.build();
+
+    it("parent nav", () => {
+      var component = project.get('test');
+
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test">\n  <nav></nav>\n  <div>\n    <h3>hello</h3>\n  </div>\n</div>');
+    });
+  });
+
   describe("paramsStructure", () => {
     describe('no params', () => {
       it("simple", () => {
