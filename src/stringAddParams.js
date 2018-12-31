@@ -21,7 +21,11 @@ export default class StringAddParams {
           let children = this.params[key.trim()]
           if (children) {
             children.forEach((child) => {
-              newStr += child.toHtml({ params: this.params })
+              if (typeof child === 'string') {
+                newStr += child
+              } else {
+                newStr += child.toHtml({ params: this.params })
+              }
             })
           } else {
             newStr += `{${key}}`
