@@ -1,6 +1,7 @@
 import Component from '../src/component';
 import Project from '../src/project';
 import assert from 'assert';
+import { expect } from 'chai';
 
 const TEST = 'test';
 
@@ -154,6 +155,34 @@ describe('Component', () => {
       var component = project.get('test2');
 
       assert.equal(component.toHtml(project), '<div id="test" class="pds-test2">\n  <h3>hello</h3>\n  <h2>world</h2>\n</div>');
+    });
+  });
+
+  describe("to html parent nested", () => {
+    var project = new Project()
+    project.load(new Component({ name: 'parent', html: '<div id="parent">{children}</div>' }).build());
+    project.load(new Component({ name: 'child', html: '<div id="child">hello</div>' }).build());
+    project.load(new Component({ name: 'test', html: '<parent><child /></parent>' }).build());
+    project.build();
+
+    it("parent nav", () => {
+      var component = project.get('test');
+
+      assert.equal(component.toHtml({ project }), '<div id="parent" class="pds-test">\n  <div id="child">hello</div>\n</div>');
+    });
+  });
+
+  describe("nested 1, 2, 3", () => {
+    var project = new Project()
+    project.load(new Component({ name: 'one', html: '<div class="one">hello</div>' }).build());
+    project.load(new Component({ name: 'two', html: '<div class="two"><one /></div>' }).build());
+    project.load(new Component({ name: 'three', html: '<div class="three"><two /></div>' }).build());
+    project.build();
+
+    it("parent nav", () => {
+      var component = project.get('three');
+
+      assert.equal(component.toHtml({ project }), '<div class="three pds-three">\n  <div class="two pds-three-two">\n    <div class="one pds-three-two-one">hello</div>\n  </div>\n</div>');
     });
   });
 

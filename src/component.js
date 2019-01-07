@@ -32,7 +32,7 @@ export default class Component extends Base {
     return newThis;
   }
 
-  toHtml ({ params, namespace, fmt = PRETTY }) {
+  toHtml ({ params, namespace, fmt = PRETTY, project }) {
     return this.parse.toHtml({ params, namespace: `pds-${this.name}`, fmt });
   }
 

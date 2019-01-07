@@ -4,6 +4,13 @@ Is a component based static website builder
 # Examples
 
 # Roadmap
+##
+nested include css/js fails...
+
+## 
+example/index
+<example />
+
 ## Layout
 ```html
 <yield name="javascripts"/>
@@ -35,3 +42,7 @@ Is a component based static website builder
 ## search
 ## signin
 ## store
+
+# issues
+## html comments fail...
+# nested scoped fails...

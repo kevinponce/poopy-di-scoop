@@ -142,7 +142,8 @@ export default class Project {
         pages: this.pageParams(),
         page: page.toJson()
       },
-      fmt: this.fmt
+      fmt: this.fmt,
+      project: this
     });
   }
 }

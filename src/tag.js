@@ -233,6 +233,8 @@ export default class Tag extends Base {
 
       newThis.path = path;
       newThis.rootDir = rootDir;
+
+      let nestedComponent = project.get(newThis.name);
     }
 
     newThis.children = newThis.children.map((child) => {
@@ -242,6 +244,16 @@ export default class Tag extends Base {
         return child;
       }
     });
+
+    if (newThis.nestChildren) {
+      newThis.nestChildren = newThis.nestChildren.map((child) => {
+        if (typeof child !== 'string') {
+          return child.loadComponents(project);
+        } else {
+          return child;
+        }
+      });
+    }
 
     return newThis;
   }
@@ -501,6 +513,7 @@ export default class Tag extends Base {
 
         let children = '';
         this.children.forEach((child) => {
+
           if (typeof child == 'string') {
             if (htmlCheck) {
               children += child;
