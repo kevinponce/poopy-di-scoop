@@ -27,7 +27,7 @@ export default class StringAddParams {
                 newStr += child
               } else {
                 child.addNamesapce = this.addNamesapce
-                newStr += child.toHtml({ params: this.params, namespace: this.namespace })
+                newStr += child.toHtml({ params: this.params, namespace: `${this.namespace}-child` })
               }
             })
           } else {

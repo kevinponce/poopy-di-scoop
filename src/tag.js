@@ -345,6 +345,10 @@ export default class Tag extends Base {
     let attrs = ''
     let each = this.attrs.find((attr) => attr.key === 'each')
 
+    if (this.appendNameToNamespace) {
+      namespace += `-${this.appendNameToNamespace}`;
+    }
+
     if (!htmlCheck && !this.skipEach && each) {
       html = ''
       if (each.value.split(' in ').length === 2) {
@@ -425,12 +429,7 @@ export default class Tag extends Base {
             }
 
             if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
-              let selectedNamespace = namespace;
-              if (this.appendNameToNamespace) {
-                selectedNamespace += `-${this.appendNameToNamespace}`;
-              }
-
-              cssBody = namespaceCss(cssBody, selectedNamespace, parentSelectors);
+              cssBody = namespaceCss(cssBody, namespace, parentSelectors);
             }
 
             let newLine = (outputStyle === 'compressed' ? '' : '\n');
@@ -502,11 +501,7 @@ export default class Tag extends Base {
               let value = attr.value
               if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
                 addedAddNamespacedClass = true;
-                if (this.appendNameToNamespace) {
-                  value += ` ${namespace}-${this.appendNameToNamespace}`;
-                } else {
-                  value += ` ${namespace}`;
-                }
+                value += ` ${namespace}`;
               }
               attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
             } else if (attr.value) {
@@ -521,11 +516,7 @@ export default class Tag extends Base {
           }
         }
         if (!addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
-          if (this.appendNameToNamespace) {
-            attrs += ` class="${namespace}-${this.appendNameToNamespace}"`;
-          } else {
-            attrs += ` class="${namespace}"`;
-          }
+          attrs += ` class="${namespace}"`;
         }
 
         let children = '';
