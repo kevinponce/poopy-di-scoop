@@ -1,7 +1,9 @@
 export default class StringAddParams {
-  constructor(text, { params }) {
+  constructor(text, { params, addNamesapce, namespace }) {
     this.text = text
     this.params = params
+    this.addNamesapce = addNamesapce || false
+    this.namespace = namespace || ''
   }
 
   build () {
@@ -24,7 +26,8 @@ export default class StringAddParams {
               if (typeof child === 'string') {
                 newStr += child
               } else {
-                newStr += child.toHtml({ params: this.params })
+                child.addNamesapce = this.addNamesapce
+                newStr += child.toHtml({ params: this.params, namespace: this.namespace })
               }
             })
           } else {

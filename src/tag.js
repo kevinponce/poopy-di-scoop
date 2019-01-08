@@ -218,11 +218,15 @@ export default class Tag extends Base {
     let component = project.get(newThis.name);
 
     if (component) {
+
       let { params, name, attrs, children, tmpParams, selfClosing, closed, tagClosed, path, rootDir } = component.parse.tags[0];
 
       newThis.params = { ...newThis.params, ...params };
       newThis.parentName = newThis.name;
       newThis.name = name;
+      if (newThis.children.length > 0) {
+        newThis.appendNameToNamespace = component.name
+      }
       newThis.attrs = [...newThis.attrs, ...attrs];
       newThis.nestChildren = newThis.children;
       newThis.children = children;
@@ -421,6 +425,11 @@ export default class Tag extends Base {
             }
 
             if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
+              let selectedNamespace = namespace;
+              if (this.appendNameToNamespace) {
+                namespace += `-${this.appendNameToNamespace}`;
+              }
+
               cssBody = namespaceCss(cssBody, namespace, parentSelectors);
             }
 
@@ -493,7 +502,11 @@ export default class Tag extends Base {
               let value = attr.value
               if (attr.key === 'class' && !addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
                 addedAddNamespacedClass = true;
-                value += ` ${namespace}`;
+                if (this.appendNameToNamespace) {
+                  value += ` ${namespace}-${this.appendNameToNamespace}`;
+                } else {
+                  value += ` ${namespace}`;
+                }
               }
               attrHtml += `=${attr.valuePrefix}${attr.valueQuote}${(new StringAddParams(value, { params: { ...currentParams, ...this.tmpParams } })).build()}${attr.valueQuote}`;
             } else if (attr.value) {
@@ -508,12 +521,15 @@ export default class Tag extends Base {
           }
         }
         if (!addedAddNamespacedClass && this.addNamesapce && namespace && fmt !== TEST) {
-          attrs += ` class="${namespace}"`;
+          if (this.appendNameToNamespace) {
+            attrs += ` class="${namespace}-${this.appendNameToNamespace}"`;
+          } else {
+            attrs += ` class="${namespace}"`;
+          }
         }
 
         let children = '';
         this.children.forEach((child) => {
-
           if (typeof child == 'string') {
             if (htmlCheck) {
               children += child;
@@ -530,7 +546,7 @@ export default class Tag extends Base {
                 }
               })
 
-              children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren } })).build();
+              children += (new StringAddParams(child, { params: { ...currentParams, ...this.tmpParams, children: this.nestChildren }, addNamesapce: true, namespace })).build();
             }
           } else {
             child.nestChildren = this.nestChildren

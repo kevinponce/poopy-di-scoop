@@ -149,12 +149,12 @@ describe('Component', () => {
     it("parent nav", () => {
       var component = project.get('test');
 
-      assert.equal(component.toHtml(project), '<div id="test" class="pds-test">\n  <h3>hello</h3>\n</div>');
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test-parent">\n  <h3 class="pds-test">hello</h3>\n</div>');
     });
     it("parent nav", () => {
       var component = project.get('test2');
 
-      assert.equal(component.toHtml(project), '<div id="test" class="pds-test2">\n  <h3>hello</h3>\n  <h2>world</h2>\n</div>');
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test2-parent">\n  <h3 class="pds-test2">hello</h3>\n  <h2 class="pds-test2">world</h2>\n</div>');
     });
   });
 
@@ -168,7 +168,7 @@ describe('Component', () => {
     it("parent nav", () => {
       var component = project.get('test');
 
-      assert.equal(component.toHtml({ project }), '<div id="parent" class="pds-test">\n  <div id="child">hello</div>\n</div>');
+      assert.equal(component.toHtml({ project }), '<div id="parent" class="pds-test-parent">\n  <div id="child" class="pds-test">hello</div>\n</div>');
     });
   });
 
@@ -195,7 +195,7 @@ describe('Component', () => {
     it("parent nav", () => {
       var component = project.get('test');
 
-      assert.equal(component.toHtml(project), '<div id="test" class="pds-test">\n  <nav></nav>\n  <div>\n    <h3>hello</h3>\n  </div>\n</div>');
+      assert.equal(component.toHtml(project), '<div id="test" class="pds-test-parent">\n  <nav></nav>\n  <div>\n    <h3 class="pds-test">hello</h3>\n  </div>\n</div>');
     });
   });
 
@@ -380,4 +380,5 @@ describe('Component', () => {
       });
     });
   });
+
 });

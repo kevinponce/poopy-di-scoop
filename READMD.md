@@ -4,8 +4,10 @@ Is a component based static website builder
 # Examples
 
 # Roadmap
-##
-nested include css/js fails...
+## default
+```html
+<div>{ hello | 'world' }</div>
+```
 
 ## 
 example/index
@@ -28,6 +30,11 @@ example/index
 ## inline css
 ```html
 <link rel="stylesheet" href="styles.css" inline>
+```
+
+## include
+```html
+{ inlclude header }
 ```
 
 ## render css/js once
