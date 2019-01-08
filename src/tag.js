@@ -234,6 +234,7 @@ export default class Tag extends Base {
       newThis.selfClosing = selfClosing;
       newThis.closed = closed;
       newThis.tagClosed = tagClosed;
+      newThis.newParentSelectors = newThis.parentSelectors();
 
       newThis.path = path;
       newThis.rootDir = rootDir;
@@ -347,6 +348,11 @@ export default class Tag extends Base {
 
     if (this.appendNameToNamespace) {
       namespace += `-${this.appendNameToNamespace}`;
+    }
+
+    // if comp was loaded
+    if (this.newParentSelectors) {
+      parentSelectors = this.newParentSelectors
     }
 
     if (!htmlCheck && !this.skipEach && each) {
