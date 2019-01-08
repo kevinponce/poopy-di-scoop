@@ -427,10 +427,10 @@ export default class Tag extends Base {
             if (this.attrs.find((attr) => ['namespaced', 'scoped'].includes(attr.key))) {
               let selectedNamespace = namespace;
               if (this.appendNameToNamespace) {
-                namespace += `-${this.appendNameToNamespace}`;
+                selectedNamespace += `-${this.appendNameToNamespace}`;
               }
 
-              cssBody = namespaceCss(cssBody, namespace, parentSelectors);
+              cssBody = namespaceCss(cssBody, selectedNamespace, parentSelectors);
             }
 
             let newLine = (outputStyle === 'compressed' ? '' : '\n');
