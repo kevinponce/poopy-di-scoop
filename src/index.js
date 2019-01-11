@@ -21,6 +21,8 @@ export default class PoopyDiScoop {
 
     let slash = (rootDir.substr(-1) === '/' ? '' : '/');
     this.rootDir = rootDir + slash;
+
+    console.log(this.rootDir)
   }
 
   async load () {
@@ -33,6 +35,8 @@ export default class PoopyDiScoop {
   componentFiles (dir, componentFiles = []) {
     let that = this;
     let files = fs.readdirSync(dir);
+
+    console.log(files)
 
     files.forEach(function(file) {
       let dirCheck = `${dir}${file}`;
@@ -118,6 +122,8 @@ export default class PoopyDiScoop {
   }
 
   pageName (path) {
+    console.log('pageName')
+    console.log(path)
     if (path === '/') {
       path = '/index';
     } else {
@@ -177,8 +183,11 @@ export default class PoopyDiScoop {
   }
 
   pageParams () {
+    console.log('pageParams')
     let pageNames  = Object.keys(this.pages);
     let params  = {};
+
+    console.log(pageNames)
 
     for (let i = 0; i < pageNames.length; i++) {
       let page = this.pages[pageNames[i]];
@@ -193,8 +202,11 @@ export default class PoopyDiScoop {
   }
 
   buildPages () {
+    console.log('buildPages')
     let that = this
     let pageNames  = Object.keys(this.pages)
+
+    console.log(pageNames)
 
     for (let i = 0; i < pageNames.length; i++) {
       let page = this.pages[pageNames[i]];
@@ -225,6 +237,8 @@ export default class PoopyDiScoop {
         if (!fs.existsSync(`${this.rootDir}${dir}`)) {
           let dirArray = dir.split('/')
           let currentDir = this.rootDir;
+          console.log(dirArray)
+          console.log(currentDir)
           for (let i = 0; i < dirArray.length; i++) {
             currentDir += `${dirArray[i]}/`;
 
