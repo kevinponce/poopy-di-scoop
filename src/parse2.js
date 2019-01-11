@@ -75,7 +75,7 @@ export default class Parse {
     }
   }
 
-  addCompLinkSetPath (comps) {
+  addCompLinkSetPath (hp, comps) {
     let comp = comps[this.name];
 
     if (comp) {
@@ -156,16 +156,16 @@ export default class Parse {
       let key = keys[i];
       let value = attrs[key];
 
-      attrsString += `${key}`;
+      attrsString += ` ${key}`;
       if (value) {
-        attrsString += `="${value}" `;
+        attrsString += `="${value}"`;
       } else {
         attrsString += ' ';
       }
     }
 
     if (attrsString.length > 0) {
-      attrsString = attrsString.substring(0, attrsString.length - 1);
+      attrsString = attrsString.substr(1);
     }
 
     return attrsString;
@@ -369,8 +369,6 @@ export default class Parse {
   }
 
   embedCss(hp) {
-    console.log('???????????????')
-    // <link href="codemirror.css" type="text/css" compressed/>
     let styles = hp.querySelectorAll('link');
 
     if (styles) {
@@ -398,14 +396,8 @@ export default class Parse {
                   cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
                 }
 
-                console.log('@@@@@@@@@@@@@@@@@@@@@@@')
-                console.log(styles[i])
-                console.log(attrs)
-                console.log(((typeof attrs['namespaced'] !== 'undefined') || (typeof attrs['scoped'] !== 'undefined')))
-                console.log(styles[i].namespace)
-                console.log(styles[i].parentSelectors)
+
                 if (((typeof attrs['namespaced'] !== 'undefined') || (typeof attrs['scoped'] !== 'undefined')) && styles[i].namespace && styles[i].parentSelectors) {
-                  console.log('yesssss')
                   cssBody = namespaceCss(cssBody, styles[i].namespace, styles[i].parentSelectors);
                 }
 
@@ -490,6 +482,7 @@ export default class Parse {
     comps = this.preloadParentSelectors(comps);
     let hp = parse(this.html, { script: true, style: true });
     this.addCompNamespace(hp);
+    this.addCompLinkSetPath(hp, comps);
     this.comp(hp, comps);
     this.each(hp, params);
     this.params(hp, params, comps);

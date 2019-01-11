@@ -3,9 +3,9 @@ import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
-import Project from './project';
 import Component from './component';
 import Page from './page';
+import Parse from './parse2';
 import { PRETTY } from './const';
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -13,14 +13,20 @@ const writeFile = promisify(fs.writeFile);
 export default class PoopyDiScoop {
   constructor(options = {}) {
     let { rootDir, fmt = PRETTY } = options;
-    this.project = new Project({ rootDir, fmt });
+
+    this.components = {};
+    this.checksums = [];
+    this.pages = [];
+    this.fmt = fmt;
+
+    let slash = (rootDir.substr(-1) === '/' ? '' : '/');
+    this.rootDir = rootDir + slash;
   }
 
   async load () {
-    await this.loadComponents(`${this.project.rootDir}components/`);
-    this.project.build();
+    await this.loadComponents(`${this.rootDir}components/`);
     await this.loadChecksums();
-    await this.loadPages(`${this.project.rootDir}pages/`);
+    await this.loadPages(`${this.rootDir}pages/`);
     this.buildPages();
   }
 
@@ -60,8 +66,9 @@ export default class PoopyDiScoop {
       ).then(function(components) {
         components.forEach(({ path, html }) => {
           let name = that.componentName(path);
-          that.project.load(new Component({ name, html, path, rootDir: that.project.rootDir }).build());
-        })
+
+          that.components[name] = new Component({ name, html, path });
+        });
       }).catch(function(err) {
         throw err;
       });
@@ -71,20 +78,20 @@ export default class PoopyDiScoop {
   }
 
   componentName (file) {
-    return file.replace(`${this.project.rootDir}components/`, '').replace('.html', '').split('/').join('-');
+    return file.replace(`${this.rootDir}components/`, '').replace('.html', '').split('/').join('-');
   }
 
   async loadChecksums () {
     let that = this;
     return new Promise((resolve, reject) => {
-      let file = `${this.project.rootDir}checksums.json`;
+      let file = `${this.rootDir}checksums.json`;
       if (fs.existsSync(file)) { 
         fs.readFile(file, 'utf8', (err, checksums) => {
           if (err) {
             reject(err);
           }
 
-          that.project.checksums = JSON.parse(checksums);
+          that.checksums = JSON.parse(checksums);
 
           resolve();
         });
@@ -148,18 +155,18 @@ export default class PoopyDiScoop {
           let page = new Page(pageJson);
 
           if (!page.component) {
-            throw new Error(`invalid page component required in ${name}`)
+            throw new Error(`invalid page component required in ${name}`);
           }
           if (!page.url) {
-            throw new Error(`invalid page url required in ${name}`)
+            throw new Error(`invalid page url required in ${name}`);
           }
 
-          let component = that.project.get(page.component)
+          let component = that.components[page.component];
           if (!component) {
-            throw new Error(`Component ${page.component} not found...`)
+            throw new Error(`Component ${page.component} not found...`);
           }
 
-          that.project.loadPage(page);
+          that.pages[page.name] = page;
         })
       }).catch(function(err) {
         throw err;
@@ -169,47 +176,80 @@ export default class PoopyDiScoop {
     }
   }
 
-  buildPages () {
-    let that = this
-    let pageNames  = Object.keys(this.project.pages)
+  pageParams () {
+    let pageNames  = Object.keys(this.pages);
+    let params  = {};
 
     for (let i = 0; i < pageNames.length; i++) {
-      let page = this.project.pages[pageNames[i]];
+      let page = this.pages[pageNames[i]];
       if (!page) {
         throw new Error(`Page ${pageName} not found...`);
       }
 
-      let html = this.project.toHtml(page.name);
-      let pageUrl = this.pageName(page.url.trim());
-      let dir = `html${path.parse(pageUrl).dir}`
+      params[page.name] = page.toJson()
+    }
 
-      if (!fs.existsSync(`${this.project.rootDir}${dir}`)) {
-        let dirArray = dir.split('/')
-        let currentDir = this.project.rootDir
-        for (let i = 0; i < dirArray.length; i++) {
-          currentDir += `${dirArray[i]}/`;
+    return params
+  }
 
-          if (!fs.existsSync(currentDir)) {
-            fs.mkdirSync(currentDir)
-          }
-        }
+  buildPages () {
+    let that = this
+    let pageNames  = Object.keys(this.pages)
+
+    for (let i = 0; i < pageNames.length; i++) {
+      let page = this.pages[pageNames[i]];
+      if (!page) {
+        throw new Error(`Page ${pageName} not found...`);
       }
 
-      // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
-      var hash = crypto.createHash('sha1')
-      hash.write(html)
-      let checksum = hash.digest('hex');
+      let component = this.components[page.component];
+      if (component) {
+        let parse = new Parse(component.html, {
+          path: component.path,
+          rootDir: this.rootDir,
+          namespace: `pds-${component.name}`,
+          name: component.name,
+          fmt: this.fmt
+        }).build();
 
-      if (this.project.checksums[page.name] !== checksum) {
-        fs.writeFile(`${this.project.rootDir}html${pageUrl}.html`, html, (err, data) => {
-          if (err) throw err;
+        let params = {
+          ...page.params,
+          pages: this.pageParams(),
+          page: page.toJson()
+        };
 
-          that.project.checksums[page.name] = checksum
+        let html = parse.toHtml(params, this.components);
+        let pageUrl = this.pageName(page.url.trim());
+        let dir = `html${path.parse(pageUrl).dir}`
 
-          fs.writeFile(`${that.project.rootDir}checksums.json`, JSON.stringify(that.project.checksums, undefined, 2), (err, data) => {
+        if (!fs.existsSync(`${this.rootDir}${dir}`)) {
+          let dirArray = dir.split('/')
+          let currentDir = this.rootDir;
+          for (let i = 0; i < dirArray.length; i++) {
+            currentDir += `${dirArray[i]}/`;
+
+            if (!fs.existsSync(currentDir)) {
+              fs.mkdirSync(currentDir)
+            }
+          }
+        }
+
+        // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
+        var hash = crypto.createHash('sha1')
+        hash.write(html)
+        let checksum = hash.digest('hex');
+
+        if (this.checksums[page.name] !== checksum) {
+          fs.writeFile(`${this.rootDir}html${pageUrl}.html`, html, (err, data) => {
             if (err) throw err;
+
+            that.checksums[page.name] = checksum
+
+            fs.writeFile(`${that.rootDir}checksums.json`, JSON.stringify(that.checksums, undefined, 2), (err, data) => {
+              if (err) throw err;
+            });
           });
-        });
+        }
       }
     }
   }

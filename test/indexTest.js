@@ -6,9 +6,9 @@ describe("PoopyDiScoop", () => {
     let poopyDiScoop = new PoopyDiScoop({ rootDir: './example' });
     await poopyDiScoop.load();
 
-    expect(Object.keys(poopyDiScoop.project.components)).to.have.lengthOf(4);
-    expect(poopyDiScoop.project.components).to.have.property('home');
-    expect(poopyDiScoop.project.components).to.have.property('shared-nav');
-    expect(poopyDiScoop.project.components).to.have.property('shared-footer');
+    expect(Object.keys(poopyDiScoop.components)).to.have.lengthOf(4);
+    expect(poopyDiScoop.components).to.have.property('home');
+    expect(poopyDiScoop.components).to.have.property('shared-nav');
+    expect(poopyDiScoop.components).to.have.property('shared-footer');
   });
 });
