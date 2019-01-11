@@ -4,6 +4,14 @@ Is a component based static website builder
 # Examples
 
 # Roadmap
+## Nest params for page fails to see array
+{
+  "blog": {
+    "tags": ["kevin"]
+  }
+}
+
+
 ## default
 ```html
 <div>{ hello | 'world' }</div>
