@@ -5,14 +5,14 @@ import path from 'path';
 import crypto from 'crypto';
 import Component from './component';
 import Page from './page';
-import Parse from './parse2';
+import Parse from './parse';
 import { PRETTY } from './const';
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
 export default class PoopyDiScoop {
   constructor(options = {}) {
-    let { rootDir, fmt = PRETTY } = options;
+    let { rootDir = './', fmt = PRETTY } = options;
 
     this.components = {};
     this.checksums = [];
@@ -21,8 +21,6 @@ export default class PoopyDiScoop {
 
     let slash = (rootDir.substr(-1) === '/' ? '' : '/');
     this.rootDir = rootDir + slash;
-
-    console.log(this.rootDir)
   }
 
   async load () {
@@ -35,8 +33,6 @@ export default class PoopyDiScoop {
   componentFiles (dir, componentFiles = []) {
     let that = this;
     let files = fs.readdirSync(dir);
-
-    console.log(files)
 
     files.forEach(function(file) {
       let dirCheck = `${dir}${file}`;
@@ -70,7 +66,6 @@ export default class PoopyDiScoop {
       ).then(function(components) {
         components.forEach(({ path, html }) => {
           let name = that.componentName(path);
-
           that.components[name] = new Component({ name, html, path });
         });
       }).catch(function(err) {
@@ -122,8 +117,6 @@ export default class PoopyDiScoop {
   }
 
   pageName (path) {
-    console.log('pageName')
-    console.log(path)
     if (path === '/') {
       path = '/index';
     } else {
@@ -183,11 +176,9 @@ export default class PoopyDiScoop {
   }
 
   pageParams () {
-    console.log('pageParams')
     let pageNames  = Object.keys(this.pages);
     let params  = {};
 
-    console.log(pageNames)
 
     for (let i = 0; i < pageNames.length; i++) {
       let page = this.pages[pageNames[i]];
@@ -202,11 +193,9 @@ export default class PoopyDiScoop {
   }
 
   buildPages () {
-    console.log('buildPages')
     let that = this
     let pageNames  = Object.keys(this.pages)
 
-    console.log(pageNames)
 
     for (let i = 0; i < pageNames.length; i++) {
       let page = this.pages[pageNames[i]];
@@ -214,7 +203,7 @@ export default class PoopyDiScoop {
         throw new Error(`Page ${pageName} not found...`);
       }
 
-      let component = this.components[page.component];
+      let component = that.components[page.component];
       if (component) {
         let parse = new Parse(component.html, {
           path: component.path,
@@ -230,15 +219,15 @@ export default class PoopyDiScoop {
           page: page.toJson()
         };
 
-        let html = parse.toHtml(params, this.components);
+        let html = parse.toHtml(params, that.components);
         let pageUrl = this.pageName(page.url.trim());
         let dir = `html${path.parse(pageUrl).dir}`
+
 
         if (!fs.existsSync(`${this.rootDir}${dir}`)) {
           let dirArray = dir.split('/')
           let currentDir = this.rootDir;
-          console.log(dirArray)
-          console.log(currentDir)
+
           for (let i = 0; i < dirArray.length; i++) {
             currentDir += `${dirArray[i]}/`;
 
