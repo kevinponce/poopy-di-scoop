@@ -207,5 +207,21 @@ describe('Parse', () => {
 
       assert.equal(parse.toHtml({}, comps), '<script type="text/javascript">console.log("hello js");var test=!0;test&&alert("hi");</script>');
     });
+
+    it("params with component", () => {
+      let home = { html: '<div raw-html>|{test}|</div>' };
+      let code = { html: '<div>code will bere here</div>' };
+      let comps = { home, code };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      assert.equal(parse.toHtml({ test: 'test me <code /> hi you' }, comps), '<div class="pds-home">|test me<div class="pds-home-param pds-home-param-code">code will bere here</div>hi you|</div>');
+    });
   });
 });

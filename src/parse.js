@@ -20,6 +20,7 @@ export default class Parse {
     this.namespace = (opts.namespace ? opts.namespace : 'pds');
     this.name = opts.name;
     this.fmt = opts.fmt || PRETTY;
+    this.skipParamsValueComp = opts.skipParamsValueComp || false;
   }
 
   build() {
@@ -75,15 +76,19 @@ export default class Parse {
         }
       }
     }
+
+    return hp;
   }
 
   addCompLinkAndScriptSetPath (hp, comps) {
     let comp = comps[this.name];
 
     if (comp) {
-      this.compLinkSetPath(hp, comp);
-      this.compScriptSetPath(hp, comp);
+      hp = this.compLinkSetPath(hp, comp);
+      hp = this.compScriptSetPath(hp, comp);
     }
+
+    return hp
   }
 
   attrs(rawAttrs) {
@@ -204,6 +209,8 @@ export default class Parse {
         }
       }
     }
+
+    return hp
   }
 
   compScriptSetPath(hp, comp) {
@@ -216,6 +223,7 @@ export default class Parse {
         }
       }
     }
+    return hp;
   }
 
   comp (hp, comps) {
@@ -274,11 +282,44 @@ export default class Parse {
           }
         }
       }
-      this.compLinkSetPath(hp, comp);
-      this.compScriptSetPath(hp, comp);
+      hp = this.compLinkSetPath(hp, comp);
+      hp = this.compScriptSetPath(hp, comp);
     } else {
       for (let i = 0; i < hp.childNodes.length; i++) {
         hp.childNodes[i] = this.comp(hp.childNodes[i], comps);
+      }
+    }
+
+    return hp;
+  }
+
+  setMarkRenderHtml(hp) {
+    hp.renderHtml = true
+
+    for (let i = 0; i < hp.childNodes.length; i++) {
+      let ch = hp.childNodes[i];
+
+      if (ch && ['TextNode', 'HTMLElement'].includes(ch.constructor.name)) {
+        hp.childNodes[i] = this.setMarkRenderHtml(hp.childNodes[i]);
+      }
+    }
+
+    return hp;
+  }
+
+  markRenderHtml (hp) {
+    for (let i = 0; i < hp.childNodes.length; i++) {
+      let ch = hp.childNodes[i];
+
+      if (ch && ch.constructor.name === 'HTMLElement') {
+        let attrs = this.attrs(ch.rawAttrs);
+        if ((typeof attrs['raw-html'] !== 'undefined')) {
+          delete attrs['raw-html']
+          hp.childNodes[i].rawAttrs = this.attrsHashToString(attrs);
+          hp.childNodes[i] = this.setMarkRenderHtml(hp.childNodes[i]);
+        } else {
+          hp.childNodes[i] = this.markRenderHtml(hp.childNodes[i]);
+        }
       }
     }
 
@@ -369,7 +410,7 @@ export default class Parse {
         if (key === 'children') {
           let value = this.findValue([key], params);
           if (value) {
-            newStr += new Parse(value, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt }).build().toHtml(params, comps);
+            newStr += new Parse(value, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true  }).build().toHtml(params, comps);
           } else {
             newStr += `{${key}}`;
           }
@@ -393,14 +434,43 @@ export default class Parse {
     return newStr
   }
 
+  paramsValueComp(params, comps) {
+    for (var key in params) {
+      if (typeof params[key] === "object") {
+        this.paramsValueComp(params[key], comps);
+      } else {
+        if (typeof params[key] === 'string' && params[key].indexOf('<') !== -1) {
+          let paramHp = parse(`<div>${params[key]}</div>`);
+          let paramNodes = paramHp.firstChild.childNodes;
+          let paramStr = '';
+          for (let i = 0; i < paramNodes.length; i++) {
+            if (paramNodes[i].constructor.name === 'TextNode') {
+              paramStr += paramNodes[i].rawText
+            } else if (paramNodes[i].constructor.name === 'HTMLElement') {
+
+              paramStr += new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true }).build().toHtml(params, comps, paramNodes[i]);
+            }
+          }
+          params[key] = paramStr;
+        }
+      }
+    }
+  }
+
   params(hp, params, comps) {
+    let currentParams = { ...params, ...hp.params };
+
+    if (hp.renderHtml) {
+      currentParams = { ...currentParams , ...params.pdsPreload };
+    }
+
     if (hp && hp.constructor.name === 'TextNode') {
-      hp.rawText = this.strAddParams(hp.rawText, { ...params, ...hp.params }, comps) || '';
+      hp.rawText = this.strAddParams(hp.rawText, currentParams, comps) || '';
     } else if (hp && hp.constructor.name === 'HTMLElement') {
-      hp.rawAttrs = this.strAddParams(hp.rawAttrs, { ...params, ...hp.params }, comps);
+      hp.rawAttrs = this.strAddParams(hp.rawAttrs, currentParams, comps);
 
       for (let i = 0; i < hp.childNodes.length; i++) {
-        hp.childNodes[i] = this.params(hp.childNodes[i], { ...params, ...hp.params }, comps);
+        hp.childNodes[i] = this.params(hp.childNodes[i], currentParams, comps);
       }
     }
 
@@ -515,19 +585,29 @@ export default class Parse {
     return hp;
   }
 
-  toHtml(params, comps) {
+  toHtml(params, comps, hp=null) {
     if (!params) params = {};
     if (!comps) comps = {};
 
     comps = this.preloadParentSelectors(comps);
-    let hp = parse(this.html, { script: true, style: true });
-    this.addCompNamespace(hp);
-    this.addCompLinkAndScriptSetPath(hp, comps);
-    this.comp(hp, comps);
-    this.each(hp, params);
-    this.params(hp, params, comps);
-    this.embedCss(hp)
-    this.embedJs(hp)
+    if(!hp) {
+      hp = parse(this.html, { script: true, style: true });
+    }
+    hp = this.addCompNamespace(hp);
+    hp = this.addCompLinkAndScriptSetPath(hp, comps);
+    hp = this.comp(hp, comps);
+    if (!this.skipParamsValueComp) {
+      if (!params.pdsPreload) {
+        params.pdsPreload = { ...params };
+      }
+
+      this.paramsValueComp(params.pdsPreload, comps);
+    }
+    hp = this.markRenderHtml(hp);
+    hp = this.each(hp, params);
+    hp = this.params(hp, params, comps);
+    hp = this.embedCss(hp)
+    hp = this.embedJs(hp)
 
     if (this.fmt === PRETTY) {
       return pretty(hp.toString());
