@@ -67,6 +67,12 @@ export default class PoopyDiScoop {
         components.forEach(({ path, html }) => {
           let name = that.componentName(path);
           that.components[name] = new Component({ name, html, path });
+
+          let names = name.split('-');
+          if (names.splice(-1)[0] === 'index' && typeof that.components[names.join('-')] === 'undefined') {
+            let aliasName = names.join('-');
+            that.components[aliasName] = new Component({ name: aliasName, html, path });
+          }
         });
       }).catch(function(err) {
         throw err;
@@ -219,7 +225,7 @@ export default class PoopyDiScoop {
           page: page.toJson()
         };
 
-        let html = parse.toHtml(params, that.components);
+        let html = parse.toHtml({ params, comps: that.components });
         let pageUrl = this.pageName(page.url.trim());
         let dir = `html${path.parse(pageUrl).dir}`
 

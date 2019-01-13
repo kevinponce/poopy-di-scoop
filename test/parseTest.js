@@ -40,7 +40,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ numbers: [1, 2, 3] }), '<ul class="list pds-home"><li>1</li><li>2</li><li>3</li></ul>');
+      assert.equal(parse.toHtml({ params: { numbers: [1, 2, 3] } }), '<ul class="list pds-home"><li>1</li><li>2</li><li>3</li></ul>');
     });
 
     it("pass in array of objects", () => {
@@ -64,7 +64,7 @@ describe('Parse', () => {
         }]
       }
 
-      assert.equal(parse.toHtml(params), '<ul class="pds-home"><li><a href="/">home</a></li><li><a href="/about">about</a></li><li><a href="/contact">contact</a></li></ul>');
+      assert.equal(parse.toHtml({ params }), '<ul class="pds-home"><li><a href="/">home</a></li><li><a href="/about">about</a></li><li><a href="/contact">contact</a></li></ul>');
     });
 
     it("attr params", () => {
@@ -76,7 +76,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ hello: 'world'}), '<div test="world"class="pds-home">you</div>');
+      assert.equal(parse.toHtml({ params: { hello: 'world' } }), '<div test="world"class="pds-home">you</div>');
     });
 
     it("html with comment", () => {
@@ -88,7 +88,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ hello: 'you', world: 'other you'}), '<div class="pds-home">you</div><div class="pds-home">other you</div>');
+      assert.equal(parse.toHtml({ params: { hello: 'you', world: 'other you' } }), '<div class="pds-home">you</div><div class="pds-home">other you</div>');
     });
 
     it("html with embedded css", () => {
@@ -100,7 +100,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ hello: 'you', world: 'other you'}), '<div class="pds-home">you</div><style type="text/css">html { color: #444; }</style><div class="pds-home">other you</div>');
+      assert.equal(parse.toHtml({ params: { hello: 'you', world: 'other you' } }), '<div class="pds-home">you</div><style type="text/css">html { color: #444; }</style><div class="pds-home">other you</div>');
     });
 
     it("basic comp", () => {
@@ -128,7 +128,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml(params, comps), '<ul class="pds-home"><li><a href="/"class="pds-home pds-home-link">home</a></li><li><a href="/about"class="pds-home pds-home-link">about</a></li><li><a href="/contact"class="pds-home pds-home-link">contact</a></li></ul>');
+      assert.equal(parse.toHtml({ params, comps }), '<ul class="pds-home"><li><a href="/"class="pds-home pds-home-link">home</a></li><li><a href="/about"class="pds-home pds-home-link">about</a></li><li><a href="/contact"class="pds-home pds-home-link">contact</a></li></ul>');
     });
 
     it("embedded comp", () => {
@@ -160,7 +160,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml(params, comps), '<div id="test"class="pds-home pds-home-parent"><ul class="pds-home pds-home-links"><li><a href="/"class="pds-home pds-home-link">home</a></li><li><a href="/about"class="pds-home pds-home-link">about</a></li><li><a href="/contact"class="pds-home pds-home-link">contact</a></li></ul><h3 class="pds-home">you</h3><h2 class="pds-home">other you</h2></div>');
+      assert.equal(parse.toHtml({ params, comps} ), '<div id="test"class="pds-home pds-home-parent"><ul class="pds-home pds-home-links"><li><a href="/"class="pds-home pds-home-link">home</a></li><li><a href="/about"class="pds-home pds-home-link">about</a></li><li><a href="/contact"class="pds-home pds-home-link">contact</a></li></ul><h3>you</h3><h2>other you</h2></div>');
     });
 
     it("link css", () => {
@@ -175,7 +175,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({}, comps), '<style type="text/css">.test{color:#fff}#hello .me,.today{font-size:12px}.home,.jail{float:left}div.home .hmmm{clear:both}</style>');
+      assert.equal(parse.toHtml({ comps }), '<style type="text/css">.test{color:#fff}#hello .me,.today{font-size:12px}.home,.jail{float:left}div.home .hmmm{clear:both}</style>');
     });
 
     it("link css namespaced", () => {
@@ -190,7 +190,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({}, comps), '<div class="test pds-home"><style type="text/css">.pds-home.test, .pds-home .test{color:#fff}.pds-home #hello .me,.pds-home .today{font-size:12px}.pds-home .home,.pds-home .jail{float:left}div.pds-home.home, ,.hmmm, .pds-home div.home .hmmm{clear:both}</style></div>');
+      assert.equal(parse.toHtml({ comps }), '<div class="test pds-home"><style type="text/css">.pds-home.test, .pds-home .test{color:#fff}.pds-home #hello .me,.pds-home .today{font-size:12px}.pds-home .home,.pds-home .jail{float:left}div.pds-home.home, ,.hmmm, .pds-home div.home .hmmm{clear:both}</style></div>');
     });
 
     it("link js", () => {
@@ -205,7 +205,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({}, comps), '<script type="text/javascript">console.log("hello js");var test=!0;test&&alert("hi");</script>');
+      assert.equal(parse.toHtml({ comps }), '<script type="text/javascript">console.log("hello js");var test=!0;test&&alert("hi");</script>');
     });
 
     it("params with component", () => {
@@ -221,7 +221,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ test: 'test me <code /> hi you' }, comps), '<div class="pds-home">|test me<div class="pds-home-param pds-home-param-code">code will bere here</div>hi you|</div>');
+      assert.equal(parse.toHtml({ params: { test: 'test me <code /> hi you' }, comps }), '<div class="pds-home">|test me<div class="pds-home-param pds-home-param-code">code will bere here</div>hi you|</div>');
     });
   });
 });

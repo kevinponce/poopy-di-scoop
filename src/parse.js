@@ -409,8 +409,9 @@ export default class Parse {
 
         if (key === 'children') {
           let value = this.findValue([key], params);
+
           if (value) {
-            newStr += new Parse(value, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true  }).build().toHtml(params, comps);
+            newStr += new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true  }).build().toHtml({ params, comps, unwrap: true });
           } else {
             newStr += `{${key}}`;
           }
@@ -447,8 +448,7 @@ export default class Parse {
             if (paramNodes[i].constructor.name === 'TextNode') {
               paramStr += paramNodes[i].rawText
             } else if (paramNodes[i].constructor.name === 'HTMLElement') {
-
-              paramStr += new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true }).build().toHtml(params, comps, paramNodes[i]);
+              paramStr += new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true }).build().toHtml({ params, comps, hp: paramNodes[i] });
             }
           }
           params[key] = paramStr;
@@ -585,9 +585,11 @@ export default class Parse {
     return hp;
   }
 
-  toHtml(params, comps, hp=null) {
-    if (!params) params = {};
-    if (!comps) comps = {};
+  toHtml(opts = {}) {
+    let params = opts.params || {};
+    let comps = opts.comps || {};
+    let hp = opts.hp || null;
+    let unwrap = opts.unwrap || false;
 
     comps = this.preloadParentSelectors(comps);
     if(!hp) {
@@ -608,6 +610,16 @@ export default class Parse {
     hp = this.params(hp, params, comps);
     hp = this.embedCss(hp)
     hp = this.embedJs(hp)
+
+    if (unwrap) {
+      if (hp.firstChild.tagName === 'div' && hp.firstChild.childNodes.length === 1) {
+        hp = hp.firstChild.firstChild;
+      } else {
+        hp = hp.firstChild
+        hp.tagName = null
+        hp.rawAttrs = ''
+      }
+    }
 
     if (this.fmt === PRETTY) {
       return pretty(hp.toString());
