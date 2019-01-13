@@ -1,4 +1,5 @@
 require('babel-polyfill');
+import _ from 'lodash';
 import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
@@ -7,7 +8,7 @@ import parseJson from 'parse-json';
 import Component from './component';
 import Page from './page';
 import Parse from './parse';
-import { PRETTY } from './const';
+import { PRETTY, LOCAL, HTML } from './const';
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
@@ -182,7 +183,7 @@ export default class PoopyDiScoop {
     }
   }
 
-  pageParams () {
+  pageParams (local=false) {
     let pageNames  = Object.keys(this.pages);
     let params  = {};
 
@@ -193,7 +194,7 @@ export default class PoopyDiScoop {
         throw new Error(`Page ${pageName} not found...`);
       }
 
-      params[page.name] = page.toJson()
+      params[page.name] = page.toJson(this.rootDir, local)
     }
 
     return params
@@ -202,63 +203,68 @@ export default class PoopyDiScoop {
   buildPages () {
     let that = this
     let pageNames  = Object.keys(this.pages)
+    let types = [HTML, LOCAL];
 
+    for (let typeI = 0; typeI < types.length; typeI++) {
+      let type = types[typeI];
 
-    for (let i = 0; i < pageNames.length; i++) {
-      let page = this.pages[pageNames[i]];
-      if (!page) {
-        throw new Error(`Page ${pageName} not found...`);
-      }
-
-      let component = that.components[page.component];
-      if (component) {
-        let parse = new Parse(component.html, {
-          path: component.path,
-          rootDir: this.rootDir,
-          namespace: `pds-${component.name}`,
-          name: component.name,
-          fmt: this.fmt
-        }).build();
-
-        let params = {
-          ...page.params,
-          pages: this.pageParams(),
-          page: page.toJson()
-        };
-
-        let html = parse.toHtml({ params, comps: that.components });
-        let pageUrl = this.pageName(page.url.trim());
-        let dir = `html${path.parse(pageUrl).dir}`
-
-
-        if (!fs.existsSync(`${this.rootDir}${dir}`)) {
-          let dirArray = dir.split('/')
-          let currentDir = this.rootDir;
-
-          for (let i = 0; i < dirArray.length; i++) {
-            currentDir += `${dirArray[i]}/`;
-
-            if (!fs.existsSync(currentDir)) {
-              fs.mkdirSync(currentDir)
-            }
-          }
+      for (let i = 0; i < pageNames.length; i++) {
+        let page = this.pages[pageNames[i]];
+        if (!page) {
+          throw new Error(`Page ${pageName} not found...`);
         }
 
-        // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
-        var hash = crypto.createHash('sha1')
-        hash.write(html)
-        let checksum = hash.digest('hex');
+        let component = that.components[page.component];
+        if (component) {
+          let parse = new Parse(_.cloneDeep(component.html), {
+            path: component.path,
+            rootDir: this.rootDir,
+            namespace: `pds-${component.name}`,
+            name: component.name,
+            fmt: this.fmt
+          }).build();
 
-        if (this.checksums[page.name] !== checksum) {
-          fs.writeFile(`${this.rootDir}html${pageUrl}.html`, html, (err, data) => {
-            if (err) throw err;
+          let params = {
+            ...page.params,
+            pages: this.pageParams(type === LOCAL),
+            page: page.toJson(this.rootDir, type === LOCAL)
+          };
 
-            that.checksums[page.name] = checksum
+          let html = parse.toHtml({ params: _.cloneDeep(params), comps: _.cloneDeep(that.components) });
+          let pageUrl = this.pageName(page.url.trim());
+          let dir = `${type}${path.parse(pageUrl).dir}`
 
-            fs.writeFile(`${that.rootDir}checksums.json`, JSON.stringify(that.checksums, undefined, 2), (err, data) => {
+          if (!fs.existsSync(`${this.rootDir}${dir}`)) {
+            let dirArray = dir.split('/')
+            let currentDir = this.rootDir;
+
+            for (let i = 0; i < dirArray.length; i++) {
+              currentDir += `${dirArray[i]}/`;
+
+              if (!fs.existsSync(currentDir)) {
+                fs.mkdirSync(currentDir)
+              }
+            }
+          }
+
+          // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
+          var hash = crypto.createHash('sha1')
+          hash.write(html)
+          let checksum = hash.digest('hex');
+
+          if (type !== HTML || this.checksums[page.name] !== checksum) {
+            fs.writeFile(`${this.rootDir}${type}${pageUrl}.html`, html, (err, data) => {
               if (err) throw err;
+
+              if (type === HTML) {
+                that.checksums[page.name] = checksum
+
+                fs.writeFile(`${that.rootDir}checksums.json`, JSON.stringify(that.checksums, undefined, 2), (err, data) => {
+                  if (err) throw err;
+                });
+              }
             });
-          });
+          }
         }
       }
     }

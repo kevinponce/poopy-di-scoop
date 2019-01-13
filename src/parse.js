@@ -522,7 +522,6 @@ export default class Parse {
                   cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
                 }
 
-
                 if (((typeof attrs['namespaced'] !== 'undefined') || (typeof attrs['scoped'] !== 'undefined')) && styles[i].namespace && styles[i].parentSelectors) {
                   cssBody = namespaceCss(cssBody, styles[i].namespace, styles[i].parentSelectors);
                 }
@@ -583,14 +582,16 @@ export default class Parse {
                   jsBody = result.code;
                 }
 
-                attrs['type'] = 'text/javascript'
-                delete attrs.src;
-                delete attrs.compressed;
-                delete attrs.class;
+                if (jsBody) {
+                  attrs['type'] = 'text/javascript'
+                  delete attrs.src;
+                  delete attrs.compressed;
+                  delete attrs.class;
 
-                scripts[i].rawAttrs = this.attrsHashToString(attrs);
+                  scripts[i].rawAttrs = this.attrsHashToString(attrs);
 
-                scripts[i].childNodes = [new TextNode(jsBody)]
+                  scripts[i].childNodes = [new TextNode(jsBody)]
+                }
               }
             }
           }

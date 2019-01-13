@@ -1,4 +1,5 @@
 import url from 'url';
+import path from 'path';
 
 export default class Page {
   constructor({ name, url, title, component, params }) {
@@ -31,11 +32,30 @@ export default class Page {
     return true;
   }
 
-  toJson () {
+  localUrl(rootDir) {
+    return `${process.cwd()}/local${path.resolve(path.parse(rootDir).dir, this.fixUrl(this.url.trim()))}.html`;
+  }
+
+  fixUrl (path) {
+    if (path === '/') {
+      path = '/index';
+    } else {
+      if (path[0] !== '/') {
+        path = `/${path}`;
+      }
+      if (path.substr(-1) === '/') {
+        path = path.substr(0, path.length -1);
+      }
+    }
+
+    return path;
+  }
+
+  toJson (rootDir, local=false) {
     return {
       "name": this.name,
       "title": this.title,
-      "url": this.url
+      "url": (local ? this.localUrl(rootDir): this.url)
     }
   }
 }
