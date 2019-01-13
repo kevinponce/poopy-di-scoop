@@ -3,6 +3,7 @@ import fs from 'fs';
 import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
+import parseJson from 'parse-json';
 import Component from './component';
 import Page from './page';
 import Parse from './parse';
@@ -96,7 +97,7 @@ export default class PoopyDiScoop {
             reject(err);
           }
 
-          that.checksums = JSON.parse(checksums);
+          that.checksums = parseJson(checksums);
 
           resolve();
         });
@@ -151,7 +152,7 @@ export default class PoopyDiScoop {
               }
 
               // TODO catch invalid json
-              resolve({ name, pageJson: JSON.parse(page) })
+              resolve({ name, pageJson: parseJson(page) })
             });
           })
         })

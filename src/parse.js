@@ -331,8 +331,13 @@ export default class Parse {
       let { key, value } = this.eachKeyAndValue(hp);
 
       if (key, value) {
-        if (Array.isArray(params[value])) {
-          value = params[value];
+        if (value && typeof value === 'string') {
+          let possibleValue = this.findValue(value.split('.'), params);
+          if (possibleValue) {
+            value = possibleValue;
+          } else if (Array.isArray(params[value])) {
+            value = params[value];
+          }
         }
 
         if (Array.isArray(value)) {
@@ -344,15 +349,15 @@ export default class Parse {
           for (let i = 0; i < value.length; i++) {
             if (hp && hp.constructor.name === 'HTMLElement') {
               var newHp = new HTMLElement(_.cloneDeep(hp.tagName), {}, _.cloneDeep(hp.rawAttrs));
-              newHp.childNodes = _.cloneDeep(hp.childNodes)
+              newHp.childNodes = _.cloneDeep(hp.childNodes);
               if (typeof newHp.params === 'undefined') newHp.params = {}
-              newHp.params[key] = value[i]
-              newHps.push(newHp)
+              newHp.params[key] = value[i];
+              newHps.push(newHp);
             } else if (hp && hp.constructor.name === 'TextNode') {
-              let newHp = new TextNode(_.cloneDeep(hp.rawText))
+              let newHp = new TextNode(_.cloneDeep(hp.rawText));
               if (typeof newHp.params === 'undefined') newHp.params = {}
-              newHp.params[key] = value[i]
-              newHps.push(newHp)
+              newHp.params[key] = value[i];
+              newHps.push(newHp);
             }
           }
 
