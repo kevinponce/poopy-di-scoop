@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import path from 'path';
 import crypto from 'crypto';
 import parseJson from 'parse-json';
+import ghpages from 'gh-pages';
 import Component from './component';
 import Page from './page';
 import Parse from './parse';
@@ -200,6 +201,21 @@ export default class PoopyDiScoop {
     return params
   }
 
+  mkdir(dir) {
+    if (!fs.existsSync(dir)) {
+      let dirArray = dir.split('/')
+      let currentDir = this.rootDir;
+
+      for (let i = 0; i < dirArray.length; i++) {
+        currentDir += `${dirArray[i]}/`;
+
+        if (!fs.existsSync(currentDir)) {
+          fs.mkdirSync(currentDir)
+        }
+      }
+    }
+  }
+
   buildPages () {
     let that = this
     let pageNames  = Object.keys(this.pages)
@@ -216,12 +232,20 @@ export default class PoopyDiScoop {
 
         let component = that.components[page.component];
         if (component) {
+          // TODO: figure out non local assetUrl should be...
+          let assetUrl = '/'
+          if (type === LOCAL) {
+            assetUrl = `${process.cwd()}/local`;
+          }
+          let assetUrlSlash = (assetUrl.substr(-1) === '/' ? '' : '/');
+
           let parse = new Parse(_.cloneDeep(component.html), {
             path: component.path,
             rootDir: this.rootDir,
             namespace: `pds-${component.name}`,
             name: component.name,
-            fmt: this.fmt
+            fmt: this.fmt,
+            assetUrl: assetUrl + assetUrlSlash
           }).build();
 
           let params = {
@@ -234,18 +258,7 @@ export default class PoopyDiScoop {
           let pageUrl = this.pageName(page.url.trim());
           let dir = `${type}${path.parse(pageUrl).dir}`
 
-          if (!fs.existsSync(`${this.rootDir}${dir}`)) {
-            let dirArray = dir.split('/')
-            let currentDir = this.rootDir;
-
-            for (let i = 0; i < dirArray.length; i++) {
-              currentDir += `${dirArray[i]}/`;
-
-              if (!fs.existsSync(currentDir)) {
-                fs.mkdirSync(currentDir)
-              }
-            }
-          }
+          this.mkdir(`${this.rootDir}${dir}`)
 
           // checksum inspired by: https://github.com/dshaw/checksum/blob/master/checksum.js
           var hash = crypto.createHash('sha1')
@@ -255,6 +268,24 @@ export default class PoopyDiScoop {
           if (type !== HTML || this.checksums[page.name] !== checksum) {
             fs.writeFile(`${this.rootDir}${type}${pageUrl}.html`, html, (err, data) => {
               if (err) throw err;
+
+              for (let imageI = 0; imageI < parse.images.length; imageI++) {
+                let imageHash = parse.images[imageI];
+
+                if (imageHash.to.split(`${process.cwd()}`).length > 1) {
+                  that.mkdir(path.parse(imageHash.to.split(`${process.cwd()}`)[1]).dir)
+                } else {
+                  if (imageHash.to[0] === '/') {
+                    that.mkdir(path.parse(`/${type}${imageHash.to}`).dir)
+                  } else {
+                    that.mkdir(path.parse(`/${type}/${imageHash.to}`).dir)
+                  }
+                }
+                
+                fs.copyFile(imageHash.from, imageHash.to, (err) => {
+                  if (err) throw err;
+                });
+              }
 
               if (type === HTML) {
                 that.checksums[page.name] = checksum
@@ -268,5 +299,9 @@ export default class PoopyDiScoop {
         }
       }
     }
+
+    ghpages.publish('html', function(err) {
+      if (err) throw err;
+    });
   }
 }

@@ -21,6 +21,8 @@ export default class Parse {
     this.name = opts.name;
     this.fmt = opts.fmt || PRETTY;
     this.skipParamsValueComp = opts.skipParamsValueComp || false;
+    this.assetUrl = opts.assetUrl || '/';
+    this.images = [];
   }
 
   build() {
@@ -425,7 +427,9 @@ export default class Parse {
           let value = this.findValue([key], params);
 
           if (value) {
-            newStr += new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true  }).build().toHtml({ params, comps, unwrap: true });
+            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl  }).build()
+            newStr += strAddParamsParse.toHtml({ params, comps, unwrap: true });
+            this.images = this.images.concat(strAddParamsParse.images)
           } else {
             newStr += `{${key}}`;
           }
@@ -464,7 +468,9 @@ export default class Parse {
             if (paramNodes[i].constructor.name === 'TextNode') {
               paramStr += paramNodes[i].rawText
             } else if (paramNodes[i].constructor.name === 'HTMLElement') {
-              paramStr += new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true }).build().toHtml({ params, comps, hp: paramNodes[i] });
+              let paramsValueCompParse = new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl }).build();
+              paramStr += paramsValueCompParse.toHtml({ params, comps, hp: paramNodes[i] });
+              this.images = this.images.concat(paramsValueCompParse.images);
             }
           }
           params[key] = paramStr;
@@ -602,6 +608,38 @@ export default class Parse {
     return hp;
   }
 
+  buildImages (hp) {
+    let images = hp.querySelectorAll('img');
+
+    if (images) {
+      for (let i = 0; i < images.length; i++) {
+        let attrs = this.attrs(images[i].rawAttrs);
+
+        if (attrs['src']) {
+          let uri = url.parse(attrs['src']);
+          if (!uri.hostname) {
+            let hrefPath = attrs['src'];
+ 
+            if (hrefPath[0] === '/') {
+              if (hrefPath.indexOf(this.rootDir) !== 0) {
+                hrefPath = this.rootDir + hrefPath.substr(1, hrefPath.length - 1);
+              }
+            } else {
+              hrefPath = path.resolve(path.parse(images[i].path || this.path).dir, hrefPath);
+            }
+
+            if (fs.existsSync(hrefPath)) {
+              attrs.src = (this.assetUrl + hrefPath.split(`${process.cwd()}/components/`)[1])
+              images[i].rawAttrs = this.attrsHashToString(attrs);
+
+              this.images.push({ from: hrefPath, to: attrs.src })
+            }
+          }
+        }
+      }
+    }
+  }
+
   toHtml(opts = {}) {
     let params = opts.params || {};
     let comps = opts.comps || {};
@@ -627,6 +665,7 @@ export default class Parse {
     hp = this.params(hp, params, comps);
     hp = this.embedCss(hp)
     hp = this.embedJs(hp)
+    this.buildImages(hp)
 
     if (unwrap) {
       if (hp.firstChild.tagName === 'div' && hp.firstChild.childNodes.length === 1) {
