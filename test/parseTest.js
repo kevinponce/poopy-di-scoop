@@ -223,5 +223,22 @@ describe('Parse', () => {
 
       assert.equal(parse.toHtml({ params: { test: 'test me <code /> hi you' }, comps }), '<div class="pds-home">|test me<div class="pds-home-param pds-home-param-code">code will bere here</div>hi you|</div>');
     });
+
+
+    it("default param", () => {
+      let home = { html: '<div>{test || \'me\'}</div>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      assert.equal(parse.toHtml({ comps }), '<div class="pds-home">me</div>');
+    });
+
   });
 });

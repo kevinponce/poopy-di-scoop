@@ -406,6 +406,15 @@ export default class Parse {
         open = true;
       } else if (char === '}' && open) {
         open = false;
+        let defaultKey;
+
+        if (key.indexOf('||') !== -1) {
+          let keys = key.split('||');
+          if (keys.length === 2) {
+            defaultKey = keys[1].trim();
+            key = keys[0].trim();
+          }
+        }
 
         if (key === 'children') {
           let value = this.findValue([key], params);
@@ -421,6 +430,8 @@ export default class Parse {
 
           if (value) {
             newStr += value;
+          } else if (defaultKey) {
+            newStr += eval(defaultKey)
           } else {
             newStr += `{${key}}`
           }

@@ -2,6 +2,11 @@
 Is a component based static website builder
 
 # Examples
+## Default Params
+default params can only have one options and it will run eval on the default value only if params is not found
+```html
+<div>{ test || 'example' }</div>
+```
 
 # Roadmap
 ## Nest params for page fails to see array
