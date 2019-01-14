@@ -37,10 +37,14 @@ export default class Page {
   }
 
   nonLocalUrl(urlPrefix) {
-    if (this.url[0] === '/') {
-      return urlPrefix + this.url.substr(1);
+    if (urlPrefix) {
+      if (this.url[0] === '/') {
+        return urlPrefix + this.url.substr(1);
+      } else {
+        return urlPrefix + this.url;
+      }
     } else {
-      return urlPrefix + this.url;
+      return this.url;
     }
   }
 

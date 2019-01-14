@@ -438,7 +438,7 @@ export default class Parse {
           let keys = key.split('.');
           let value = this.findValue(keys, params);
 
-          if (value) {
+          if (typeof value !== 'undefined') {
             newStr += value;
           } else if (defaultKey) {
             newStr += eval(defaultKey)
