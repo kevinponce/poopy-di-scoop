@@ -22,6 +22,7 @@ export default class Parse {
     this.fmt = opts.fmt || PRETTY;
     this.skipParamsValueComp = opts.skipParamsValueComp || false;
     this.assetUrl = opts.assetUrl || '/';
+    this.assetPath = opts.assetPath || '/';
     this.images = [];
   }
 
@@ -427,7 +428,7 @@ export default class Parse {
           let value = this.findValue([key], params);
 
           if (value) {
-            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl  }).build()
+            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath  }).build()
             newStr += strAddParamsParse.toHtml({ params, comps, unwrap: true });
             this.images = this.images.concat(strAddParamsParse.images)
           } else {
@@ -468,7 +469,7 @@ export default class Parse {
             if (paramNodes[i].constructor.name === 'TextNode') {
               paramStr += paramNodes[i].rawText
             } else if (paramNodes[i].constructor.name === 'HTMLElement') {
-              let paramsValueCompParse = new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl }).build();
+              let paramsValueCompParse = new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath }).build();
               paramStr += paramsValueCompParse.toHtml({ params, comps, hp: paramNodes[i] });
               this.images = this.images.concat(paramsValueCompParse.images);
             }
@@ -629,10 +630,11 @@ export default class Parse {
             }
 
             if (fs.existsSync(hrefPath)) {
+              let to = (this.assetPath + hrefPath.split(`${process.cwd()}/components/`)[1])
               attrs.src = (this.assetUrl + hrefPath.split(`${process.cwd()}/components/`)[1])
               images[i].rawAttrs = this.attrsHashToString(attrs);
 
-              this.images.push({ from: hrefPath, to: attrs.src })
+              this.images.push({ from: hrefPath, to });
             }
           }
         }

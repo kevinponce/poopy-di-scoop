@@ -36,6 +36,15 @@ export default class Page {
     return `${process.cwd()}/local${path.resolve(path.parse(rootDir).dir, this.fixUrl(this.url.trim()))}.html`;
   }
 
+  nonLocalUrl(urlPrefix) {
+    if (this.url[0] === '/') {
+      return urlPrefix + this.url.substr(1);
+    } else {
+      return urlPrefix + this.url;
+    }
+  }
+
+
   fixUrl (path) {
     if (path === '/') {
       path = '/index';
@@ -51,11 +60,15 @@ export default class Page {
     return path;
   }
 
-  toJson (rootDir, local=false) {
+  toJson (opts = {}) {
+    let rootDir = opts.rootDir || false;
+    let local = opts.local || false;
+    let urlPrefix = opts.urlPrefix || '';
+
     return {
       "name": this.name,
       "title": this.title,
-      "url": (local ? this.localUrl(rootDir): this.url)
+      "url": (local ? this.localUrl(rootDir): this.nonLocalUrl(urlPrefix))
     }
   }
 }

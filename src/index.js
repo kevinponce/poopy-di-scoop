@@ -15,12 +15,13 @@ const writeFile = promisify(fs.writeFile);
 
 export default class PoopyDiScoop {
   constructor(options = {}) {
-    let { rootDir = './', fmt = PRETTY } = options;
+    let { rootDir = './', fmt = PRETTY, githubName } = options;
 
     this.components = {};
     this.checksums = [];
     this.pages = [];
     this.fmt = fmt;
+    this.githubName = githubName || null;
 
     let slash = (rootDir.substr(-1) === '/' ? '' : '/');
     this.rootDir = rootDir + slash;
@@ -195,7 +196,11 @@ export default class PoopyDiScoop {
         throw new Error(`Page ${pageName} not found...`);
       }
 
-      params[page.name] = page.toJson(this.rootDir, local)
+      if (this.githubName) {
+        params[page.name] = page.toJson({ rootDir: this.rootDir, local, urlPrefix: `/${this.githubName}/` })
+      } else {
+        params[page.name] = page.toJson({ rootDir: this.rootDir, local })
+      }
     }
 
     return params
@@ -233,11 +238,17 @@ export default class PoopyDiScoop {
         let component = that.components[page.component];
         if (component) {
           // TODO: figure out non local assetUrl should be...
-          let assetUrl = '/'
+          let assetUrl = '/';
+          let assetPath = `/${type}/`;
           if (type === LOCAL) {
             assetUrl = `${process.cwd()}/local`;
+            assetPath = `${process.cwd()}/local`;
+          } else if (that.githubName) {
+            assetUrl = `/${that.githubName}/`
           }
+
           let assetUrlSlash = (assetUrl.substr(-1) === '/' ? '' : '/');
+          let assetPathSlash = (assetPath.substr(-1) === '/' ? '' : '/');
 
           let parse = new Parse(_.cloneDeep(component.html), {
             path: component.path,
@@ -245,13 +256,21 @@ export default class PoopyDiScoop {
             namespace: `pds-${component.name}`,
             name: component.name,
             fmt: this.fmt,
-            assetUrl: assetUrl + assetUrlSlash
+            assetUrl: assetUrl + assetUrlSlash,
+            assetPath: assetPath + assetPathSlash
           }).build();
+
+          let currentPageParams;
+          if (this.githubName) {
+            currentPageParams = page.toJson({ rootDir: this.rootDir, local: (type === LOCAL), urlPrefix: `/${this.githubName}/` })
+          } else {
+            currentPageParams = page.toJson({ rootDir: this.rootDir, local: (type === LOCAL) })
+          }
 
           let params = {
             ...page.params,
             pages: this.pageParams(type === LOCAL),
-            page: page.toJson(this.rootDir, type === LOCAL)
+            page: currentPageParams
           };
 
           let html = parse.toHtml({ params: _.cloneDeep(params), comps: _.cloneDeep(that.components) });
@@ -275,11 +294,14 @@ export default class PoopyDiScoop {
                 if (imageHash.to.split(`${process.cwd()}`).length > 1) {
                   that.mkdir(path.parse(imageHash.to.split(`${process.cwd()}`)[1]).dir)
                 } else {
-                  if (imageHash.to[0] === '/') {
-                    that.mkdir(path.parse(`/${type}${imageHash.to}`).dir)
-                  } else {
-                    that.mkdir(path.parse(`/${type}/${imageHash.to}`).dir)
-                  }
+                  that.mkdir(path.parse(imageHash.to).dir)
+                }
+
+                if (!imageHash.from.includes(process.cwd())) {
+                  imageHash.from = process.cwd() + imageHash.from//.split(process.cwd()+'/')[1]
+                } else
+                if (!imageHash.to.includes(process.cwd())) {
+                  imageHash.to = process.cwd() + imageHash.to
                 }
                 
                 fs.copyFile(imageHash.from, imageHash.to, (err) => {
@@ -300,8 +322,10 @@ export default class PoopyDiScoop {
       }
     }
 
-    ghpages.publish('html', function(err) {
-      if (err) throw err;
-    });
+    if (that.githubName) {
+      ghpages.publish('html', function(err) {
+        if (err) throw err;
+      });
+    }
   }
 }
