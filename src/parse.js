@@ -230,13 +230,11 @@ export default class Parse {
   }
 
   comp (hp, comps) {
-    if (hp.constructor.name === 'HTMLElement' && comps[hp.tagName] && comps[hp.tagName].html) {
+    if (hp && hp.constructor.name === 'HTMLElement' && hp.tagName && comps[hp.tagName] && comps[hp.tagName].html) {
       let compName = hp.tagName;
       let comp = comps[hp.tagName];
       let compHtml = comp.html;
       let params = hp.params || {}
-
-
       let orgAttrs = this.attrs(hp.rawAttrs);
       
       params['children'] = hp.innerHTML.toString();
@@ -640,6 +638,130 @@ export default class Parse {
         }
       }
     }
+  }
+
+  keysUsed(text, hp, comps, children) {
+    let keysUsed = {};
+    let open = false;
+    let key = '';
+
+    for (var i = 0; i < text.length; i++) {
+      let char = text[i];
+
+      if (char === '{') {
+        key = '';
+        open = true;
+      } else if (char === '}' && open) {
+        open = false;
+        let defaultKey;
+
+        if (key.indexOf('||') !== -1) {
+          let keys = key.split('||');
+          if (keys.length === 2) {
+            defaultKey = keys[1].trim();
+            key = keys[0].trim();
+          }
+        }
+
+        if (key === 'children') {
+          if (children) {
+            keysUsed = _.merge({}, keysUsed, children);
+          }
+        } else {
+          let keys = key.split('.');
+          let newKeysUsed = {};
+          let lastKey = keys.splice(-1);
+          newKeysUsed[lastKey] = { type: 'string' };
+          if (typeof defaultKey !== 'undefined') {
+            newKeysUsed[lastKey].default = eval(defaultKey);
+          }
+
+          for (let keyI = keys.length -1; keyI >= 0; keyI--) {
+            let tempNewKeysUsed = newKeysUsed
+            newKeysUsed = {}
+            newKeysUsed[keys[keyI]] = tempNewKeysUsed;
+          }
+
+          keysUsed = _.merge({}, keysUsed, newKeysUsed);
+        }
+      } else if (open) {
+        key += char
+      }
+    }
+
+    return keysUsed;
+  }
+
+  buildParamsUsed(hp, comps, children=null) {
+    let paramsUsed = {};
+
+    if (hp.childNodes) {
+      for (let i = 0; i < hp.childNodes.length; i++) {
+        if (hp.childNodes[i].constructor.name === 'HTMLElement') {
+          if (hp.params && hp.params.children) {
+            let childrenParse = new Parse(hp.params.children).build();
+            children = childrenParse.paramsUsed(comps);
+          }
+
+          if (typeof hp.childNodes[i].tagName === 'string' && hp.childNodes[i].tagName.indexOf('{') !== -1) {
+            paramsUsed = _.merge({}, paramsUsed, this.keysUsed(hp.childNodes[i].tagName, hp.childNodes[i], comps, children))
+          }
+
+          if (typeof hp.childNodes[i].rawAttrs === 'string' && hp.childNodes[i].rawAttrs.indexOf('{') !== -1) {
+            paramsUsed = _.merge({}, paramsUsed, this.keysUsed(hp.childNodes[i].rawAttrs, hp.childNodes[i], comps, children))
+          }
+
+          paramsUsed = _.merge({}, paramsUsed, this.buildParamsUsed(hp.childNodes[i], comps, children))
+        } else if (hp.childNodes[i].constructor.name === 'TextNode') {
+          if (typeof hp.childNodes[i].rawText === 'string' && hp.childNodes[i].rawText.indexOf('{') !== -1) {
+            paramsUsed = _.merge({}, paramsUsed, this.keysUsed(hp.childNodes[i].rawText, hp.childNodes[i], comps, children))
+          }
+        }
+      }
+    }
+
+    return paramsUsed;
+  }
+
+  findAttrEach(hp) {
+    let eachAttr = [];
+
+    if (hp.childNodes) {
+      for (let i = 0; i < hp.childNodes.length; i++) {
+        if (hp.childNodes[i].constructor.name === 'HTMLElement') {
+          if (hp.childNodes[i].rawAttrs.indexOf('each') !== -1) {
+            let { key, value } = this.eachKeyAndValue(hp.childNodes[i]);
+
+            if (key, value) {
+              eachAttr.push({ key, value });
+            }
+          }
+
+          eachAttr = _.merge([], eachAttr, this.findAttrEach(hp.childNodes[i]));
+        }
+      }
+    }
+
+    return eachAttr;
+  }
+
+  paramsUsed (comps) {
+    let hp = parse(this.html);
+    hp = this.comp(hp, comps);
+    let paramsUsed = this.buildParamsUsed(hp, comps);
+    let attrWithEach = this.findAttrEach(hp);
+
+    for (let i = 0; i < attrWithEach.length; i++) {
+      if (typeof paramsUsed[attrWithEach[i].key] !== 'undefined') {
+        if (!Array.isArray(attrWithEach[i].value)) {
+          let newValue = [paramsUsed[attrWithEach[i].key]];
+          delete paramsUsed[attrWithEach[i].key]
+          paramsUsed[attrWithEach[i].value] = newValue;
+        }
+      }
+    }
+
+    return paramsUsed;
   }
 
   toHtml(opts = {}) {

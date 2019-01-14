@@ -2,11 +2,12 @@ import Parse from '../src/parse';
 import Component from '../src/component';
 import assert from 'assert';
 import { PRETTY, COMPRESSED } from '../src/const';
+import { expect } from 'chai';
 
 const TEST = 'test';
 
 describe('Parse', () => {
-  describe('build', () => {
+  describe('html', () => {
     it("test", () => {
       var parse = new Parse('<ul><li each="num in [1, 2, 3]">{num}</li></ul>', {
         path: './example/components/home.html',
@@ -239,6 +240,99 @@ describe('Parse', () => {
 
       assert.equal(parse.toHtml({ comps }), '<div class="pds-home">me</div>');
     });
+  });
 
+  describe('paramsUsed', () => {
+    it("simple", () => {
+      let home = { html: '<div>{test}</div>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({"test": {"type": "string" } });
+    });
+
+    it("object", () => {
+      let home = { html: '<a href="{link.url}">{link.title}</a>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ "link": { "url": { "type": "string" }, "title": { "type": "string" } } });
+    });
+
+    it("object with default", () => {
+      let home = { html: '<a href="{link.url || "/"}">{link.title || "home" }</a>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ "link": { "url": { "type": "string", "default": "/" }, "title": { "type": "string", "default": "home" } } });
+    });
+
+    it("each as param", () => {
+      let home = { html: '<ul><li each="num in test" class="kevin">{num}</li></ul>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ "test": [{ "type": "string" }] });
+    });
+
+    it("embedded comp", () => {
+      let parent = { html: '<div id="test">{children}</div>' };
+      let link = { html: '<a href="{link.href}">{link.title}</a>' };
+      let links = { html: '<ul><li each ="link in links"><link /></li></ul>' };
+      let example = { html: '<parent><links /><h3>{hello}</h3><h2>{world}</h2></parent>' };
+      let comps = { parent, links, link, example };
+      let params = {
+        links: [{
+          href: '/',
+          title: 'home'
+        }, {
+          href: '/about',
+          title: 'about'
+        }, {
+          href: '/contact',
+          title: 'contact'
+        }],
+        hello: 'you',
+        world: 'other you'
+      };
+
+      var parse = new Parse(example.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ "links": [{ "href": { "type": "string" }, "title": { "type": "string" } }], "hello": { "type": "string" }, "world": { "type": "string" } });
+    });
   });
 });
