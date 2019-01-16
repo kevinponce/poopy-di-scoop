@@ -7,7 +7,8 @@
     "build": "babel src --out-dir lib",
     "prepublish": "npm run build",
     "test": "mocha --require babel-register --require babel-polyfill",
-    "testFile": "mocha test/parseTest.js --require babel-register --require babel-polyfill"
+    "testFile": "mocha test/parseTest.js --require babel-register --require babel-polyfill",
+    "cmsDev": "babel-node src/cms.js --presets es2015,stage-0"
   },
   "author": "",
   "license": "MIT",
@@ -24,6 +25,9 @@
   },
   "dependencies": {
     "babel-polyfill": "^6.26.0",
+    "body-parser": "^1.18.3",
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
     "gh-pages": "^2.0.1",
     "html-minifier": "^3.5.21",
     "lodash": "^4.17.11",

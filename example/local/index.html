@@ -1,19 +1,35 @@
 <div class="home pds-home">
-  <nav class="my-nav pds-home pds-home-shared-nav">
+  <nav class="my-nav pds-home pds-home-shared-nav1">
     <style rel="stylesheet" type="text/css">
-      nav.pds-home-shared-nav,
-      .pds-home-shared-nav nav {
+      nav.pds-home-shared-nav1,
+      .pds-home-shared-nav1 nav {
         color: #DDD
       }
 
-      nav.pds-home-shared-nav ul,
-      .pds-home-shared-nav nav ul {
+      nav.pds-home-shared-nav1 ul,
+      .pds-home-shared-nav1 nav ul {
         font-size: 20px
       }
     </style>
     <ul>
       <li><a href="#">Home</a></li>
       <li><a href="/about">About</a></li>
+    </ul>
+  </nav>
+  <nav class="my-nav pds-home pds-home-shared-nav2">
+    <style rel="stylesheet" type="text/css">
+      nav.pds-home-shared-nav2,
+      .pds-home-shared-nav2 nav {
+        color: #DDD
+      }
+
+      nav.pds-home-shared-nav2 ul,
+      .pds-home-shared-nav2 nav ul {
+        font-size: 20px
+      }
+    </style>
+    <ul>
+      <li each='link in nav2.links'><a href="{link.href}">{link.title}</a></li>
     </ul>
   </nav>
   <div>

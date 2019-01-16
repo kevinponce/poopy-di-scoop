@@ -1,0 +1,75 @@
+<form action="/pages/create" method="post">
+  <input type="hidden" name="component" value="<%= componentName %>"/>
+
+  <div class="param-wrapper">
+    <label>Name</label>
+    <input type="text" name="name"/>
+  </div>
+
+  <div class="param-wrapper">
+    <label>Url</label>
+    <input type="text" name="url"/>
+  </div>
+
+  <div class="param-wrapper">
+    <label>Title</label>
+    <input type="text" name="title"/>
+  </div>
+
+  <%- include('addParams', { paramsUsed: paramsUsed, level: 0, name: 'params', key:'', template: false }); %>
+  <input type="submit" value="submit"/>
+</form>
+<div id="templates-wrapper" style="display: none;">
+  <%- include('addParams', { paramsUsed: paramsUsed, level: 0, name: 'params', key:'', template: true }); %>
+</div>
+<script>
+(function(){
+  function addToArray (e) {
+    e.preventDefault();
+
+    var target = event.target;
+    var parent = target.parentElement;
+    var key = target.getAttribute('key');
+    let templatesWrapper = document.getElementById("templates-wrapper")
+
+    if (parent && key) {
+      let template = document.querySelectorAll("#templates-wrapper #"+key)[0]
+      let paramContent = parent.getElementsByClassName("paramContent")[0];
+      let count = parseInt(paramContent.getAttribute('count')) + 1;
+
+      if (template && paramContent) {
+        let newItem = template.cloneNode(true);
+
+        var inputs = newItem.querySelectorAll('input');
+        for (var inputI = 0; inputI < inputs.length; inputI++) {
+          let name = inputs[inputI].getAttribute('name');
+          inputs[inputI].setAttribute('name', name.replace('[]', '[' + count+ ']'))
+        }
+
+        var textareas = newItem.querySelectorAll('textarea');
+        for (var textareaI = 0; textareaI < textareas.length; textareaI++) {
+          let name = textareas[textareaI].getAttribute('name');
+          textareas[textareaI].setAttribute('name', name.replace('[]', '[' + count+ ']'))
+        }
+
+        newItem.getElementsByClassName('delete-array-item')[0].addEventListener('click', deleteItem, false);
+        paramContent.appendChild(newItem);
+        paramContent.setAttribute('count', count);
+      }
+    }
+  }
+
+  function deleteItem(e) {
+    e.preventDefault();
+
+    var target = event.target;
+    var parent = target.parentElement;
+    parent.parentNode.removeChild(parent);
+  }
+
+  var buttonsNewArray = document.getElementsByClassName("newArray");
+  for (var i = 0; i < buttonsNewArray.length; i++) {
+    buttonsNewArray[i].addEventListener('click', addToArray, false);
+  }
+})();
+</script>

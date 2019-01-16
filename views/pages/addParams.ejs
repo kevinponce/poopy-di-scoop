@@ -1,0 +1,50 @@
+<% Object.keys(paramsUsed).forEach(function(paramUsed) { %>
+  <% if (level !== 0 || !['page', 'pages'].includes(paramUsed)) { %>
+    <%
+      let localName = name;
+      let locolKey = key;
+      if (localName === '') {
+        localName = paramUsed;
+      } else {
+        localName += '[' + paramUsed + ']';
+      }
+
+      if (locolKey === '') {
+        locolKey = paramUsed;
+      } else {
+        locolKey += '_' + paramUsed;
+      }
+    %>
+
+    <div class="param-wrapper">
+      <label><%= paramUsed %></label>
+      <% if (Array.isArray(paramsUsed[paramUsed])) { %>
+
+        <% if (template) { %>
+          <div class="template param-wrapper" id="<%= locolKey + '_array' %>">
+            <a href="#" class="delete-array-item">delete</a>
+            <% paramsUsed[paramUsed].forEach(function(childParamUsed) { %>
+              <%- include('addParams', { paramsUsed: childParamUsed, level: level + 1, name: (localName + '[]'), key: locolKey + '_array', template: template }); %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <a href="#" class="newArray" key="<%= locolKey + '_array' %>">+</a>
+        <% } %>
+
+        <div class="paramContent" count="0"></div>
+      <% } else { %>
+        <% if (paramsUsed[paramUsed].type === 'string') { %>
+          <input type="text" name="<%= localName %>"/>
+        <% } else if (paramsUsed[paramUsed].type === 'number') { %>
+          <input type="number" name="<%= localName %>"/>
+        <% } else if (paramsUsed[paramUsed].type === 'html') { %>
+          <textarea class="html-input" name="<%= localName %>"></textarea>
+        <% } else if (paramsUsed[paramUsed].type === 'text') { %>
+            <textarea name="<%= localName %>"></textarea>
+        <% } else { %>
+          <%- include('addParams', { paramsUsed: paramsUsed[paramUsed], level: level + 1, name: localName, key: locolKey, template: template }); %>
+        <% } %>
+      <% } %>
+    </div>
+  <% } %>
+<% }) %>

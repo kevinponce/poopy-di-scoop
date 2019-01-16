@@ -19,7 +19,7 @@ export default class PoopyDiScoop {
 
     this.components = {};
     this.checksums = [];
-    this.pages = [];
+    this.pages = {};
     this.fmt = fmt;
     this.githubName = githubName || null;
 
@@ -27,11 +27,24 @@ export default class PoopyDiScoop {
     this.rootDir = rootDir + slash;
   }
 
-  async load () {
+  async load (pushToProd=true) {
     await this.loadComponents(`${this.rootDir}components/`);
     await this.loadChecksums();
     await this.loadPages(`${this.rootDir}pages/`);
     this.buildPages();
+    if (pushToProd) {
+      this.pushToProd()
+    }
+  }
+
+  async listComponents () {
+    await this.loadComponents(`${this.rootDir}components/`);
+    return this.components;
+  }
+
+  async listPages () {
+    await await this.loadPages(`${this.rootDir}pages/`);
+    return this.pages;
   }
 
   componentFiles (dir, componentFiles = []) {
@@ -155,7 +168,7 @@ export default class PoopyDiScoop {
               }
 
               // TODO catch invalid json
-              resolve({ name, pageJson: parseJson(page) })
+              resolve({ name, pageJson: parseJson(page) });
             });
           })
         })
@@ -172,7 +185,7 @@ export default class PoopyDiScoop {
 
           let component = that.components[page.component];
           if (!component) {
-            throw new Error(`Component ${page.component} not found...`);
+            throw new Error(`Component ${page.component} not found...1`);
           }
 
           that.pages[page.name] = page;
@@ -189,11 +202,10 @@ export default class PoopyDiScoop {
     let pageNames  = Object.keys(this.pages);
     let params  = {};
 
-
     for (let i = 0; i < pageNames.length; i++) {
       let page = this.pages[pageNames[i]];
       if (!page) {
-        throw new Error(`Page ${pageName} not found...`);
+        throw new Error(`Page ${pageName} not found...2`);
       }
 
       if (this.githubName) {
@@ -232,12 +244,11 @@ export default class PoopyDiScoop {
       for (let i = 0; i < pageNames.length; i++) {
         let page = this.pages[pageNames[i]];
         if (!page) {
-          throw new Error(`Page ${pageName} not found...`);
+          throw new Error(`Page ${pageNames[i]} not found...3`);
         }
 
         let component = that.components[page.component];
         if (component) {
-          // TODO: figure out non local assetUrl should be...
           let assetUrl = '/';
           let assetPath = `/${type}/`;
           if (type === LOCAL) {
@@ -298,10 +309,10 @@ export default class PoopyDiScoop {
                 }
 
                 if (!imageHash.from.includes(process.cwd())) {
-                  imageHash.from = process.cwd() + imageHash.from//.split(process.cwd()+'/')[1]
+                  imageHash.from = process.cwd() + imageHash.from;
                 } else
                 if (!imageHash.to.includes(process.cwd())) {
-                  imageHash.to = process.cwd() + imageHash.to
+                  imageHash.to = process.cwd() + imageHash.to;
                 }
                 
                 fs.copyFile(imageHash.from, imageHash.to, (err) => {
@@ -321,8 +332,18 @@ export default class PoopyDiScoop {
         }
       }
     }
+  }
 
-    if (that.githubName) {
+  paramsUsed(component) {
+    let parse = new Parse(_.cloneDeep(component.html), {
+      rootDir: this.rootDir
+    }).build();
+
+    return parse.paramsUsed(this.components)
+  }
+
+  pushToProd() {
+    if (this.githubName) {
       ghpages.publish('html', function(err) {
         if (err) throw err;
       });

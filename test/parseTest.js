@@ -285,7 +285,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      expect(parse.paramsUsed(comps)).to.eql({ "link": { "url": { "type": "string", "default": "/" }, "title": { "type": "string", "default": "home" } } });
+      expect(parse.paramsUsed(comps)).to.eql({ "link": { "url": { "type": "string", "default": " /" }, "title": { "type": "string", "default": "home" } } });
     });
 
     it("each as param", () => {
@@ -334,5 +334,68 @@ describe('Parse', () => {
 
       expect(parse.paramsUsed(comps)).to.eql({ "links": [{ "href": { "type": "string" }, "title": { "type": "string" } }], "hello": { "type": "string" }, "world": { "type": "string" } });
     });
+
+    it("each as param", () => {
+      let home = { html: '<ul><li each=\'link in [{ "href": "#", "title": "Home"}, { "href": "/about", "title": "About"}]\'><a href="{link.href}">{link.title}</a></li></ul>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ });
+    });
+
+    it("each as param", () => {
+      let home = { html: '<div>{link}</di><ul><li each=\'link in [{ "href": "#", "title": "Home"}, { "href": "/about", "title": "About"}]\'><a href="{link.href}">{link.title}</a></li></ul>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      expect(parse.paramsUsed(comps)).to.eql({ "link": { "type": "string" } });
+    });
+
+    it("each as param", () => {
+      let nav2 = { html: "<nav class='my-nav'><ul><li each='link in nav2.links'><a href='{link.href}'>{link.title}</a></li></ul></nav>" };
+      let home = { html: "<div class='home'><nav2 /></div>" };
+      let comps = { home, nav2 };
+
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      let params = {
+        nav2: {
+          links: [{
+            href: '/',
+            title: 'home'
+          }, {
+            href: '/about',
+            title: 'about'
+          }, {
+            href: '/contact',
+            title: 'contact'
+          }]
+        }
+      };
+
+      assert.equal(parse.toHtml({ params, comps }), '<div class="home pds-home"><nav class="my-nav pds-home pds-home-nav2"><ul><li><a href="/">home</a></li><li><a href="/about">about</a></li><li><a href="/contact">contact</a></li></ul></nav></div>');
+    });
+
   });
 });

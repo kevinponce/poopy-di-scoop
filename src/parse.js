@@ -413,11 +413,20 @@ export default class Parse {
       } else if (char === '}' && open) {
         open = false;
         let defaultKey;
+        let dataType = 'string';
 
         if (key.indexOf('||') !== -1) {
           let keys = key.split('||');
           if (keys.length === 2) {
             defaultKey = keys[1].trim();
+            key = keys[0].trim();
+          }
+        }
+
+        if (key.indexOf(':') !== -1) {
+          let keys = key.split(':');
+          if (keys.length === 2) {
+            dataType = keys[1].trim();
             key = keys[0].trim();
           }
         }
@@ -488,10 +497,12 @@ export default class Parse {
     if (hp && hp.constructor.name === 'TextNode') {
       hp.rawText = this.strAddParams(hp.rawText, currentParams, comps) || '';
     } else if (hp && hp.constructor.name === 'HTMLElement') {
-      hp.rawAttrs = this.strAddParams(hp.rawAttrs, currentParams, comps);
+      if (!['style', 'script'].includes(hp.tagName)) {
+        hp.rawAttrs = this.strAddParams(hp.rawAttrs, currentParams, comps);
 
-      for (let i = 0; i < hp.childNodes.length; i++) {
-        hp.childNodes[i] = this.params(hp.childNodes[i], currentParams, comps);
+        for (let i = 0; i < hp.childNodes.length; i++) {
+          hp.childNodes[i] = this.params(hp.childNodes[i], currentParams, comps);
+        }
       }
     }
 
@@ -654,11 +665,20 @@ export default class Parse {
       } else if (char === '}' && open) {
         open = false;
         let defaultKey;
+        let dataType = 'string';
 
         if (key.indexOf('||') !== -1) {
           let keys = key.split('||');
           if (keys.length === 2) {
             defaultKey = keys[1].trim();
+            key = keys[0].trim();
+          }
+        }
+
+        if (key.indexOf(':') !== -1) {
+          let keys = key.split(':');
+          if (keys.length === 2 && ['text', 'html', 'number'].includes(keys[1].trim())) {
+            dataType = keys[1].trim();
             key = keys[0].trim();
           }
         }
@@ -669,20 +689,30 @@ export default class Parse {
           }
         } else {
           let keys = key.split('.');
-          let newKeysUsed = {};
-          let lastKey = keys.splice(-1);
-          newKeysUsed[lastKey] = { type: 'string' };
-          if (typeof defaultKey !== 'undefined') {
-            newKeysUsed[lastKey].default = eval(defaultKey);
-          }
+          let passOnParam = false;
 
-          for (let keyI = keys.length -1; keyI >= 0; keyI--) {
-            let tempNewKeysUsed = newKeysUsed
-            newKeysUsed = {}
-            newKeysUsed[keys[keyI]] = tempNewKeysUsed;
+          if (typeof hp.ignoreParams !== 'undefined') {
+            if (hp.ignoreParams.includes(keys[0])) {
+              passOnParam = true;
+            }
+            
           }
+          if (!passOnParam) {
+            let newKeysUsed = {};
+            let lastKey = keys.splice(-1);
+            newKeysUsed[lastKey] = { type: dataType };
+            if (typeof defaultKey !== 'undefined') {
+              newKeysUsed[lastKey].default = eval(defaultKey);
+            }
 
-          keysUsed = _.merge({}, keysUsed, newKeysUsed);
+            for (let keyI = keys.length -1; keyI >= 0; keyI--) {
+              let tempNewKeysUsed = newKeysUsed
+              newKeysUsed = {}
+              newKeysUsed[keys[keyI]] = tempNewKeysUsed;
+            }
+
+            keysUsed = _.merge({}, keysUsed, newKeysUsed);
+          }
         }
       } else if (open) {
         key += char
@@ -708,7 +738,9 @@ export default class Parse {
           }
 
           if (typeof hp.childNodes[i].rawAttrs === 'string' && hp.childNodes[i].rawAttrs.indexOf('{') !== -1) {
-            paramsUsed = _.merge({}, paramsUsed, this.keysUsed(hp.childNodes[i].rawAttrs, hp.childNodes[i], comps, children))
+            let attrs = this.attrs(hp.childNodes[i].rawAttrs);
+            delete attrs['each']
+            paramsUsed = _.merge({}, paramsUsed, this.keysUsed(this.attrsHashToString(attrs), hp.childNodes[i], comps, children))
           }
 
           paramsUsed = _.merge({}, paramsUsed, this.buildParamsUsed(hp.childNodes[i], comps, children))
@@ -723,7 +755,44 @@ export default class Parse {
     return paramsUsed;
   }
 
-  findAttrEach(hp) {
+  findAttrEach(hp, paramsUsed) {
+    let eachAttr = [];
+    let deleteAttr = [];
+
+    if (hp.childNodes) {
+      for (let i = 0; i < hp.childNodes.length; i++) {
+        if (hp.childNodes[i].constructor.name === 'HTMLElement') {
+          if (hp.childNodes[i].rawAttrs.indexOf('each') !== -1) {
+            let { key, value } = this.eachKeyAndValue(hp.childNodes[i]);
+
+            if (key && value) {
+              eachAttr.push({ key, value });
+            }
+          }
+
+          let newEachAttr;
+          [newEachAttr, paramsUsed] =  this.findAttrEach(hp.childNodes[i], paramsUsed)
+          eachAttr = _.merge([], eachAttr, newEachAttr);
+        }
+      }
+    }
+
+    return [eachAttr, paramsUsed];
+  }
+
+  eachHuntMark(hp, key) {
+    if (typeof hp.ignoreParams === 'undefined') {
+      hp.ignoreParams = [key]
+    } else if (!hp.ignoreParams.includes(key)) {
+      hp.ignoreParams.push(key)
+    }
+
+    for (let i = 0; i < hp.childNodes.length; i++) {
+      this.eachHuntMark(hp.childNodes[i], key)
+    }
+  }
+
+  eachHunt(hp) {
     let eachAttr = [];
 
     if (hp.childNodes) {
@@ -732,12 +801,11 @@ export default class Parse {
           if (hp.childNodes[i].rawAttrs.indexOf('each') !== -1) {
             let { key, value } = this.eachKeyAndValue(hp.childNodes[i]);
 
-            if (key, value) {
-              eachAttr.push({ key, value });
+            if (Array.isArray(value)) {
+              this.eachHuntMark(hp.childNodes[i], key)
             }
           }
-
-          eachAttr = _.merge([], eachAttr, this.findAttrEach(hp.childNodes[i]));
+          eachAttr = _.merge([], eachAttr, this.eachHunt(hp.childNodes[i]));
         }
       }
     }
@@ -748,15 +816,29 @@ export default class Parse {
   paramsUsed (comps) {
     let hp = parse(this.html);
     hp = this.comp(hp, comps);
+    this.eachHunt(hp);
     let paramsUsed = this.buildParamsUsed(hp, comps);
-    let attrWithEach = this.findAttrEach(hp);
+    let attrWithEach = [];
+    [attrWithEach, paramsUsed] = this.findAttrEach(hp, paramsUsed);
 
     for (let i = 0; i < attrWithEach.length; i++) {
       if (typeof paramsUsed[attrWithEach[i].key] !== 'undefined') {
         if (!Array.isArray(attrWithEach[i].value)) {
           let newValue = [paramsUsed[attrWithEach[i].key]];
           delete paramsUsed[attrWithEach[i].key]
-          paramsUsed[attrWithEach[i].value] = newValue;
+
+          let values = attrWithEach[i].value.split('.').reverse();
+          let lastValue = values.shift();
+          let newHash = {};
+          newHash[lastValue] = newValue;
+
+          for(let valueI = 0; valueI < values.length; valueI++) {
+            let newHashWrap = {}
+            newHashWrap[values[valueI]] = newHash;
+            newHash = newHashWrap;
+          }
+
+          paramsUsed = _.merge({}, paramsUsed, newHash)
         }
       }
     }

@@ -1,11 +1,117 @@
 # Poopy di scoop
-Is a component based static website builder
+Is a component based static website builder!
 
-# Examples
+# Getting Started
+npm i poopy-di-scoop
+
+```javascript
+var poopDiScoop = require('poopy-di-scoop').default;
+
+var pds = new poopDiScoop({
+  rootDir: './',
+  githubName: 'blog' // optinal and is used for deploying to github
+});
+
+pds.load(); // by default will push to prod if it is configured correctly above
+pds.load(false); // build without pushing to prod.
+
+pds.pushToProd(); // you can push to prod manually
+```
+
+# Folder Structure
+## components
+Components are segments of html that are compiled into creating a static website. They get there name from their folder struture.
+Example:
+components/home/index.html: home
+components/blog/post.html: blog-post
+
+## html
+Is a compiled directory that is used for prod.
+
+## local
+Is a compiled directory that enables you to test locally.
+
+## pages
+Pages are used to pass data into a component and generate html in html and local directory.
+```javascript
+{
+  "name": "home",
+  "url": "/",
+  "component": "home",
+  "params": {
+    "hello": "kevin was here!"
+  }
+}
+```
+
+# Component Examples
+## Params
+a params can be print by adding {} around param key
+```html
+<div>{ example }</div>
+<div class="{ example }">{ example }</div>
+<a href="{ link.href }">{ link.title }</a>
+```
+## Each
+```html
+<ul>
+  <li each="num in [1, 2, 3]">{num}</li>
+</ul>
+<ul>
+  <li each="link in links">
+    <a href="{ link.href }">{ link.title }</a>
+  </li>
+</ul>
+```
+
+## Include Component
+my-nav/index.html
+```html
+<ul>
+  <li each="link in links">
+    <a href="{ link.href }">{ link.title }</a>
+  </li>
+</ul>
+```
+
+home/index.html
+```html
+<html>
+  <body>
+    <my-nav />
+    <h2>Hello World</h2>
+  </body>
+</html>
+```
+
+## Children
+layout/index.html
+```html
+<html>
+  <body>{children}</body>
+</html>
+```
+
+home/index.html
+```html
+<layout>
+  <h2>Hello World</h2>
+</layout>
+```
+
 ## Default Params
 default params can only have one options and it will run eval on the default value only if params is not found
 ```html
 <div>{ test || 'example' }</div>
+```
+
+# CMS
+## Param Type
+text, html, number are support type. Do the following to get it work with the CMS
+```html
+<div>{ test:text }</div>
+<div>{ test:html }</div>
+<div>{ test:number }</div>
 ```
 
 # Roadmap
