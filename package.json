@@ -1,6 +1,6 @@
 {
   "name": "poopy-di-scoop",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "",
   "main": "lib/index.js",
   "scripts": {
@@ -31,6 +31,7 @@
     "gh-pages": "^2.0.1",
     "html-minifier": "^3.5.21",
     "lodash": "^4.17.11",
+    "moment": "^2.23.0",
     "node-html-parser": "^1.1.11",
     "node-sass": "^4.10.0",
     "parse-json": "^4.0.0",

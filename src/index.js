@@ -284,6 +284,43 @@ export default class PoopyDiScoop {
             page: currentPageParams
           };
 
+          if (typeof page.pages !== 'undefined') {
+            if (typeof page.pages.nameAs !== 'undefined' && typeof page.pages.tags !== 'undefined' && Array.isArray(page.pages.tags)) {
+              let pageArray = pageNames.map((pn) =>  this.pages[pn]);
+
+              params[page.pages.nameAs] = pageArray.filter((p) => {
+                if(typeof p.tags !== 'undefined' && Array.isArray(p.tags)) {
+                  for (var i = 0; i < page.pages.tags.length; i++) {
+                    if (!p.tags.includes(page.pages.tags[i])) {
+                      return false;
+                    }
+                  }
+                  return true;
+                } else {
+                  return false;
+                }
+              });
+
+              if (typeof page.pages.orderBy !== 'undefined') {
+                let withOrderByAttr = params[page.pages.nameAs].filter((p) => (typeof p[page.pages.orderBy] !== 'undefined'))
+                let withoutOrderByAttr = params[page.pages.nameAs].filter((p) => (typeof p[page.pages.orderBy] === 'undefined'))
+
+                withOrderByAttr.sort((p1, p2) => p2[page.pages.orderBy] - p1[page.pages.orderBy])
+
+                params[page.pages.nameAs] = [...withOrderByAttr, ...withoutOrderByAttr];
+              }
+
+              params[page.pages.nameAs].map((p) => {
+                if (that.githubName) {
+                  p.url = p.fmtUrl({ rootDir: that.rootDir, local: (type === LOCAL), urlPrefix: `/${that.githubName}/` })
+                } else {
+                  p.url = p.fmtUrl({ rootDir: that.rootDir, local: (type === LOCAL) })
+                }
+                return p
+              })
+            }
+          }
+
           let html = parse.toHtml({ params: _.cloneDeep(params), comps: _.cloneDeep(that.components) });
           let pageUrl = this.pageName(page.url.trim());
           let dir = `${type}${path.parse(pageUrl).dir}`

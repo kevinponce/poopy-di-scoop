@@ -1,13 +1,27 @@
 import url from 'url';
 import path from 'path';
+import moment from 'moment';
 
 export default class Page {
-  constructor({ name, url, title, component, params }) {
+  constructor({ name, url, title, component, params, date, tags, pages }) {
     this.name = name;
     this.url = url;
     this.title = title;
     this.component = component;
     this.params = params;
+    this.date = date;
+    this.tags = tags || [];
+    this.pages = pages || {};
+
+    if (this.date) {
+      let momentDate = moment(this.date, 'YYYY-MM-DD');
+
+      if (momentDate.isValid()) {
+        this.date = momentDate.toDate();
+      } else {
+        this.date = null;
+      }
+    }
 
     this.isValid();
   }
@@ -48,6 +62,13 @@ export default class Page {
     }
   }
 
+  fmtUrl(opts = {}) {
+    let rootDir = opts.rootDir || false;
+    let local = opts.local || false;
+    let urlPrefix = opts.urlPrefix || '';
+
+    return (local ? this.localUrl(rootDir): this.nonLocalUrl(urlPrefix));
+  }
 
   fixUrl (path) {
     if (path === '/') {
@@ -65,14 +86,12 @@ export default class Page {
   }
 
   toJson (opts = {}) {
-    let rootDir = opts.rootDir || false;
-    let local = opts.local || false;
-    let urlPrefix = opts.urlPrefix || '';
-
     return {
       "name": this.name,
       "title": this.title,
-      "url": (local ? this.localUrl(rootDir): this.nonLocalUrl(urlPrefix))
+      "url": this.fmtUrl(opts),
+      "date": this.date,
+      "tags": this.tags
     }
   }
 }
