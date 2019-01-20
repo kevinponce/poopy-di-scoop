@@ -229,7 +229,7 @@ export default class Parse {
     return hp;
   }
 
-  comp (hp, comps) {
+  comp(hp, comps) {
     if (hp && hp.constructor.name === 'HTMLElement' && hp.tagName && comps[hp.tagName] && comps[hp.tagName].html) {
       let compName = hp.tagName;
       let comp = comps[hp.tagName];
@@ -399,7 +399,7 @@ export default class Parse {
     }
   }
 
-  strAddParams(text, params, comps) {
+  strAddParams(text, params, comps, raw) {
     let newStr = '';
     let open = false;
     let key = '';
@@ -435,8 +435,12 @@ export default class Parse {
           let value = this.findValue([key], params);
 
           if (value) {
-            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath  }).build()
-            newStr += strAddParamsParse.toHtml({ params, comps, unwrap: true });
+            if (raw) {
+              return value
+            }
+
+            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath }).build()
+            newStr += strAddParamsParse.toHtml({ params, comps, unwrap: true, raw });
             this.images = this.images.concat(strAddParamsParse.images)
           } else {
             newStr += `{${key}}`;
@@ -445,7 +449,9 @@ export default class Parse {
           let keys = key.split('.');
           let value = this.findValue(keys, params);
 
-          if (typeof value !== 'undefined') {
+          if (raw) {
+            newStr += `{${key}}`;
+          } else if (typeof value !== 'undefined') {
             newStr += value;
           } else if (defaultKey) {
             newStr += eval(defaultKey)
@@ -487,7 +493,7 @@ export default class Parse {
     }
   }
 
-  params(hp, params, comps) {
+  params(hp, params, comps, raw) {
     let currentParams = { ...params, ...hp.params };
 
     if (hp.renderHtml) {
@@ -495,13 +501,14 @@ export default class Parse {
     }
 
     if (hp && hp.constructor.name === 'TextNode') {
-      hp.rawText = this.strAddParams(hp.rawText, currentParams, comps) || '';
+      hp.rawText = this.strAddParams(hp.rawText, currentParams, comps, raw) || '';
     } else if (hp && hp.constructor.name === 'HTMLElement') {
       if (!['style', 'script'].includes(hp.tagName)) {
-        hp.rawAttrs = this.strAddParams(hp.rawAttrs, currentParams, comps);
+        raw = raw || Object.keys(this.attrs(hp.rawAttrs)).includes('raw');
+        hp.rawAttrs = this.strAddParams(hp.rawAttrs, currentParams, comps, raw);
 
         for (let i = 0; i < hp.childNodes.length; i++) {
-          hp.childNodes[i] = this.params(hp.childNodes[i], currentParams, comps);
+          hp.childNodes[i] = this.params(hp.childNodes[i], currentParams, comps, raw);
         }
       }
     }
@@ -853,6 +860,7 @@ export default class Parse {
     let comps = opts.comps || {};
     let hp = opts.hp || null;
     let unwrap = opts.unwrap || false;
+    let raw = opts.raw || false;
 
     comps = this.preloadParentSelectors(comps);
     if(!hp) {
@@ -870,7 +878,7 @@ export default class Parse {
     }
     hp = this.markRenderHtml(hp);
     hp = this.each(hp, params);
-    hp = this.params(hp, params, comps);
+    hp = this.params(hp, params, comps, raw);
     hp = this.embedCss(hp)
     hp = this.embedJs(hp)
     this.buildImages(hp)

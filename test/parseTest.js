@@ -459,5 +459,52 @@ describe('Parse', () => {
 
       assert.equal(parse.toHtml({ params, comps }), '<div class="home pds-home"><nav class="my-nav pds-home pds-home-nav2"><ul><li><a href="/">home</a></li><li><a href="/about">about</a></li><li><a href="/contact">contact</a></li></ul></nav></div>');
     });
+
+    it("raw nested params", () => {
+      var parse = new Parse('<div raw>{hi}</div>', {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+      let params = { hi: 'hello' };
+
+      assert.equal(parse.toHtml({ params }), '<div raw class="pds-home">{hi}</div>');
+    });
+
+    it("raw nested params", () => {
+      let code = { html: "<div>{children}</div>" };
+      let home = { html: "<div><code raw>{hi}</code></div>" };
+      let params = { hi: 'hello' };
+      let comps = { home, code };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      assert.equal(parse.toHtml({ params, comps }), '<div class="pds-home"><div class="pds-home pds-home-code">{hi}</div></div>');
+    });
+
+    it("raw nested params", () => {
+      let mycode = { html: "<div class=\"code-wrapper\">{children}</div>" };
+      let home = { html: "<div raw-html>{body}</div>" };
+      let params = { body: '<mycode raw>{\r\n  \"presets\": [\"es2015\", \"stage-0\"]\r\n}</mycode>' };
+      let comps = { home, mycode };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      assert.equal(parse.toHtml({ params, comps }), '<div class="pds-home"><div class="code-wrapper pds-home-param pds-home-param-mycode">{ "presets": ["es2015", "stage-0"] }</div></div>');
+    });
   });
 });
