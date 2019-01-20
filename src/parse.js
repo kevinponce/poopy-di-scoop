@@ -752,6 +752,8 @@ export default class Parse {
       }
     }
 
+    delete paramsUsed['pages'];
+
     return paramsUsed;
   }
 
