@@ -24,6 +24,8 @@ export default class Parse {
     this.assetUrl = opts.assetUrl || '/';
     this.assetPath = opts.assetPath || '/';
     this.images = [];
+    this.renderedCss = opts.renderedCss || {}
+    this.renderedJs = opts.renderedJs || {}
   }
 
   build() {
@@ -439,7 +441,7 @@ export default class Parse {
               return value
             }
 
-            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath }).build()
+            let strAddParamsParse = new Parse(`<div>${value}</div>`, { rootDir: this.rootDir, path: this.path, namespace: this.namespace, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath, renderedCss: this.renderedCss, renderedJs: this.renderedJs }).build()
             newStr += strAddParamsParse.toHtml({ params, comps, unwrap: true, raw });
             this.images = this.images.concat(strAddParamsParse.images)
           } else {
@@ -482,7 +484,7 @@ export default class Parse {
             if (paramNodes[i].constructor.name === 'TextNode') {
               paramStr += paramNodes[i].rawText
             } else if (paramNodes[i].constructor.name === 'HTMLElement') {
-              let paramsValueCompParse = new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath }).build();
+              let paramsValueCompParse = new Parse('', { rootDir: this.rootDir, path: this.path, namespace: `${this.namespace}-param`, name: this.name, fmt: this.fmt, skipParamsValueComp: true, assetUrl: this.assetUrl, assetPath: this.assetPath, renderedCss: this.renderedCss, renderedJs: this.renderedJs }).build();
               paramStr += paramsValueCompParse.toHtml({ params, comps, hp: paramNodes[i] });
               this.images = this.images.concat(paramsValueCompParse.images);
             }
@@ -537,30 +539,59 @@ export default class Parse {
                 hrefPath = path.resolve(path.parse(styles[i].path || this.path).dir, hrefPath);
               }
 
-              if (fs.existsSync(hrefPath)) {
-                let outputStyle = (typeof attrs['compressed'] !== 'undefined' ? 'compressed' : 'nested');
-                let cssBody = fs.readFileSync(hrefPath, 'utf8');
-
-                if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
-                  cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
+              let namespace = ((typeof attrs['namespaced'] !== 'undefined') || (typeof attrs['scoped'] !== 'undefined')) && styles[i].namespace && styles[i].parentSelectors;
+              let skip = false;
+              if (typeof attrs['once'] !== 'undefined') {
+                if (typeof this.renderedCss[hrefPath] !== 'undefined') {
+                  if (namespace) {
+                    skip = typeof this.renderedCss[hrefPath][namespace] !== 'undefined';
+                  } else {
+                    skip = typeof this.renderedCss[hrefPath]['*'] !== 'undefined';
+                  }
                 }
+              }
 
-                if (((typeof attrs['namespaced'] !== 'undefined') || (typeof attrs['scoped'] !== 'undefined')) && styles[i].namespace && styles[i].parentSelectors) {
-                  cssBody = namespaceCss(cssBody, styles[i].namespace, styles[i].parentSelectors);
+              if (!skip) {
+                if (fs.existsSync(hrefPath)) {
+                  let outputStyle = (typeof attrs['compressed'] !== 'undefined' ? 'compressed' : 'nested');
+                  let cssBody = fs.readFileSync(hrefPath, 'utf8');
+
+                  if (path.extname(hrefPath) === '.scss' || outputStyle === 'compressed') {
+                    cssBody = sass.renderSync({ data: cssBody, outputStyle, includePaths: [this.rootDir] }).css;
+                  }
+
+                  if (namespace) {
+                    cssBody = namespaceCss(cssBody, styles[i].namespace, styles[i].parentSelectors);
+                  }
+
+                  let newLine = (outputStyle === 'compressed' ? '' : '\n');
+
+                  delete attrs.href;
+                  delete attrs.compressed;
+                  delete attrs.namespaced;
+                  delete attrs.scoped;
+                  delete attrs.class;
+                  attrs.type = 'text/css';
+
+                  styles[i].tagName = 'style';
+                  styles[i].rawAttrs = this.attrsHashToString(attrs);
+                  styles[i].childNodes = [new TextNode(cssBody.toString())];
+
+                  if (typeof this.renderedCss[hrefPath] === 'undefined') {
+                    this.renderedCss[hrefPath] = {};
+                  }
+
+                  if (namespace) {
+                    this.renderedCss[hrefPath][styles[i].namespace] = true;
+                  } else {
+                    this.renderedCss[hrefPath]['*'] = true;
+                  }
                 }
-
-                let newLine = (outputStyle === 'compressed' ? '' : '\n');
-
+              } else {
                 delete attrs.href;
-                delete attrs.compressed;
-                delete attrs.namespaced;
-                delete attrs.scoped;
-                delete attrs.class;
-                attrs.type = 'text/css';
-
-                styles[i].tagName = 'style';
                 styles[i].rawAttrs = this.attrsHashToString(attrs);
-                styles[i].childNodes = [new TextNode(cssBody.toString())];
+                styles[i].childNodes = [new TextNode('already included style sheet')]
+                styles[i].tagName = '!--'
               }
             }
           }
@@ -591,30 +622,43 @@ export default class Parse {
                 hrefPath = path.resolve(path.parse(scripts[i].path || this.path).dir, hrefPath);
               }
 
-              if (fs.existsSync(hrefPath)) {
-                let compressed = typeof attrs['compressed'] !== 'undefined';
-                let jsBody = fs.readFileSync(hrefPath, 'utf8');
+              let skip = false;
+              if (typeof attrs['once'] !== 'undefined') {
+                skip = typeof this.renderedJs[hrefPath] !== 'undefined'
+              }
 
-                if (compressed) {
-                  let result = UglifyJS.minify(jsBody);
+              if (!skip) {
+                if (fs.existsSync(hrefPath)) {
+                  let compressed = typeof attrs['compressed'] !== 'undefined';
+                  let jsBody = fs.readFileSync(hrefPath, 'utf8');
 
-                  if (result.error) {
-                    throw result.error;
+                  if (compressed) {
+                    let result = UglifyJS.minify(jsBody);
+
+                    if (result.error) {
+                      throw result.error;
+                    }
+
+                    jsBody = result.code;
                   }
 
-                  jsBody = result.code;
+                  if (jsBody) {
+                    attrs['type'] = 'text/javascript'
+                    delete attrs.src;
+                    delete attrs.compressed;
+                    delete attrs.class;
+
+                    scripts[i].rawAttrs = this.attrsHashToString(attrs);
+
+                    scripts[i].childNodes = [new TextNode(jsBody)]
+                    this.renderedJs[hrefPath] = true;
+                  }
                 }
-
-                if (jsBody) {
-                  attrs['type'] = 'text/javascript'
-                  delete attrs.src;
-                  delete attrs.compressed;
-                  delete attrs.class;
-
-                  scripts[i].rawAttrs = this.attrsHashToString(attrs);
-
-                  scripts[i].childNodes = [new TextNode(jsBody)]
-                }
+              } else {
+                delete attrs.src;
+                scripts[i].rawAttrs = this.attrsHashToString(attrs);
+                scripts[i].childNodes = [new TextNode('already included javascript')]
+                scripts[i].tagName = '!--'
               }
             }
           }

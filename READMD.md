@@ -105,6 +105,37 @@ default params can only have one options and it will run eval on the default val
 <div>{ test || 'example' }</div>
 ```
 
+## Param render html used to render components
+```html
+<div raw-html>{ test }</div>
+```
+
+## Don't render param so it will skip params within tag
+```html
+<div raw>{ test }</div>
+```
+
+## Including CSS
+Href will use the relative path and if it is found, it will embed it.
+If you would like to compress the css, add attr compressed.
+If you would like to namespace css, add attr scoped or namespaced.
+Sometimes a component will be included multiple times and if you want the css to only be included once add attr once.
+```html
+<link href="blogCard.scss" type="text/css" compressed/>
+<link href="blogCard.scss" type="text/css" scoped/>
+<link href="blogCard.scss" type="text/css" namespaced/>
+<link href="blogCard.scss" type="text/css" once/>
+```
+
+## Including Js
+Href will use the relative path and if it is found, it will embed it.
+If you would like to compress the css, add attr compressed.
+Sometimes a component will be included multiple times and if you want the js to only be included once add attr once.
+```html
+<script type="text/javascript" src="mode/python.js" compressed></script>
+<script type="text/javascript" src="mode/python.js" once></script>
+```
+
 # CMS
 ## Param Type
 text, html, number are support type. Do the following to get it work with the CMS
