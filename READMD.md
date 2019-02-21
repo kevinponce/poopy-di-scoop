@@ -107,7 +107,7 @@ default params can only have one options and it will run eval on the default val
 
 ## Param render html used to render components
 ```html
-<div raw-html>{ test }</div>
+<div raw="html">{ test }</div>
 ```
 
 ## Don't render param so it will skip params within tag

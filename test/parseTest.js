@@ -177,7 +177,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ comps }), '<style type="text/css">.test{color:#fff}#hello .me,.today{font-size:12px}.home,.jail{float:left}div.home .hmmm{clear:both}</style>');
+      assert.equal(parse.toHtml({ comps }), '<style type="text/css">.test{color:#fff}#hello .me,.today{font-size:12px}.home,.jail{float:left}div.home .hmmm{clear:both} </style>');
     });
 
     it("link css namespaced", () => {
@@ -192,7 +192,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ comps }), '<div class="test pds-home"><style type="text/css">.pds-home.test, .pds-home .test{color:#fff}.pds-home #hello .me,.pds-home .today{font-size:12px}.pds-home .home,.pds-home .jail{float:left}div.pds-home.home, ,.hmmm, .pds-home div.home .hmmm{clear:both}</style></div>');
+      assert.equal(parse.toHtml({ comps }), '<div class="test pds-home"><style type="text/css">.pds-home.test, .pds-home .test{color:#fff}.pds-home #hello .me,.pds-home .today{font-size:12px}.pds-home .home,.pds-home .jail{float:left}div.pds-home.home, ,.hmmm, .pds-home div.home .hmmm{clear:both} </style></div>');
     });
 
     it("link js", () => {
@@ -211,7 +211,7 @@ describe('Parse', () => {
     });
 
     it("params with component", () => {
-      let home = { html: '<div raw-html>|{test}|</div>' };
+      let home = { html: '<div raw="html">|{test}|</div>' };
       let code = { html: '<div>code will bere here</div>' };
       let comps = { home, code };
 
@@ -223,7 +223,7 @@ describe('Parse', () => {
         fmt: COMPRESSED
       }).build();
 
-      assert.equal(parse.toHtml({ params: { test: 'test me <code /> hi you' }, comps }), '<div class="pds-home">|test me<div class="pds-home-param pds-home-param-code">code will bere here</div>hi you|</div>');
+      assert.equal(parse.toHtml({ params: { test: 'test me <code /> hi you' }, comps }), '<div class="pds-home">|test me <div class="pds-home-param pds-home-param-code">code will bere here</div> hi you|</div>');
     });
 
 
@@ -240,6 +240,21 @@ describe('Parse', () => {
       }).build();
 
       assert.equal(parse.toHtml({ comps }), '<div class="pds-home">me</div>');
+    });
+
+    it("code with a tag", () => {
+      let home = { html: '<code raw="text">#include <Servo.h></code>' };
+      let comps = { home };
+
+      var parse = new Parse(home.html, {
+        path: './example/components/home.html',
+        rootDir: './example/components',
+        namespace: 'pds-home',
+        name: 'home',
+        fmt: COMPRESSED
+      }).build();
+
+      assert.equal(parse.toHtml({ comps }), '<code class="pds-home">#include <Servo.h></code>');
     });
   });
 
@@ -461,7 +476,7 @@ describe('Parse', () => {
     });
 
     it("raw nested params", () => {
-      var parse = new Parse('<div raw>{hi}</div>', {
+      var parse = new Parse('<div raw="text">{hi}</div>', {
         path: './example/components/home.html',
         rootDir: './example/components',
         namespace: 'pds-home',
@@ -470,12 +485,12 @@ describe('Parse', () => {
       }).build();
       let params = { hi: 'hello' };
 
-      assert.equal(parse.toHtml({ params }), '<div raw class="pds-home">{hi}</div>');
+      assert.equal(parse.toHtml({ params }), '<div class="pds-home">{hi}</div>');
     });
 
     it("raw nested params", () => {
       let code = { html: "<div>{children}</div>" };
-      let home = { html: "<div><code raw>{hi}</code></div>" };
+      let home = { html: '<div><code raw="text">{hi}</code></div>' };
       let params = { hi: 'hello' };
       let comps = { home, code };
 
@@ -492,8 +507,8 @@ describe('Parse', () => {
 
     it("raw nested params", () => {
       let mycode = { html: "<div class=\"code-wrapper\">{children}</div>" };
-      let home = { html: "<div raw-html>{body}</div>" };
-      let params = { body: '<mycode raw>{\r\n  \"presets\": [\"es2015\", \"stage-0\"]\r\n}</mycode>' };
+      let home = { html: "<div raw=\"html\">{body}</div>" };
+      let params = { body: '<mycode raw="text">{\r\n  \"presets\": [\"es2015\", \"stage-0\"]\r\n}</mycode>' };
       let comps = { home, mycode };
 
       var parse = new Parse(home.html, {
